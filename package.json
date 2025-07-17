@@ -1,0 +1,70 @@
+{
+  "name": "vscode-mcp-client",
+  "displayName": "VS Code MCP Client",
+  "description": "A VS Code extension that implements a Model Control Protocol (MCP) client, similar to Cursor.",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:vscode-mcp-client.connect",
+    "onCommand:vscode-mcp-client.executePrompt"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vscode-mcp-client.connect",
+        "title": "MCP: Connect to Server"
+      },
+      {
+        "command": "vscode-mcp-client.executePrompt",
+        "title": "MCP: Execute Prompt"
+      }
+    ],
+    "configuration": {
+      "title": "MCP Client",
+      "properties": {
+        "mcpClient.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:8080",
+          "description": "URL of the MCP server"
+        },
+        "mcpClient.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for the LLM service"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.3",
+    "@types/mocha": "^8.2.2",
+    "@types/node": "^14.14.37",
+    "@types/vscode": "^1.60.0",
+    "@types/ws": "^8.5.4",
+    "@typescript-eslint/eslint-plugin": "^4.22.0",
+    "@typescript-eslint/parser": "^4.22.0",
+    "eslint": "^7.24.0",
+    "glob": "^7.1.6",
+    "mocha": "^8.3.2",
+    "typescript": "^4.2.4",
+    "vscode-test": "^1.5.2"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "ws": "^8.13.0"
+  }
+}
