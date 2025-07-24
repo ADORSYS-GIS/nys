@@ -42,7 +42,9 @@ export class McpClient extends EventEmitter {
       this.sessionId = sessionResponse.data.sessionId;
 
       // Now connect to the WebSocket
-      const wsUrl = `${this.serverUrl.replace('http', 'ws')}/api/ws/${this.sessionId}`;
+      const wsScheme = this.serverUrl.startsWith('https') ? 'wss' : 'ws';
+      const baseUrl = this.serverUrl.replace(/^https?:\/\//, '');
+      const wsUrl = `${wsScheme}://${baseUrl}/api/ws/${this.sessionId}`;
       this.connection = new WebSocket(wsUrl);
 
       return new Promise((resolve, reject) => {
