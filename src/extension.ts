@@ -34,7 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage(`Connected to MCP server at ${serverUrl}`);
     } catch (error) {
       statusBarManager.setConnected(false);
-      vscode.window.showErrorMessage(`Failed to connect: ${error.message}`);
+      vscode.window.showErrorMessage(`Failed to connect: ${error instanceof Error ? error.message : String(error)}`);
     }
   });
 
@@ -75,7 +75,7 @@ export function activate(context: vscode.ExtensionContext) {
         statusBarManager.setProcessing(false);
       } catch (error) {
         statusBarManager.setProcessing(false);
-        vscode.window.showErrorMessage(`Error: ${error.message}`);
+        vscode.window.showErrorMessage(`Error: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   });

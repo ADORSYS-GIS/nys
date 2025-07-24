@@ -1,4 +1,4 @@
-import * as WebSocket from 'ws';
+import WebSocket from 'ws';
 import axios from 'axios';
 import { EventEmitter } from 'events';
 import * as vscode from 'vscode';

@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  mcp-filesystem:
+    image: mcp/filesystem
+    container_name: mcp-filesystem-server
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount your project directory
+      - ./:/workspace
+      # Optional: Mount additional directories
+      # - /home/christian:/home/christian
+      # - /tmp:/tmp
+    command: ["/workspace"]  # This is the <allowed-directory>
+    stdin_open: true  # Equivalent to -i flag
+    tty: true        # Equivalent to -t flag
+    restart: unless-stopped
