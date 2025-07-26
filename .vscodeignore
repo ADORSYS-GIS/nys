@@ -1,16 +1,5 @@
 .vscode/**
 .vscode-test/**
-!node_modules/axios/**
-!node_modules/ws/**
-.gitignore
-.yarnrc
-vsc-extension-quickstart.md
-**/tsconfig.json
-**/.eslintrc.json
-**/*.map
-**/*.ts
-.vscode/**
-.vscode-test/**
 .gitignore
 .yarnrc
 vsc-extension-quickstart.md
@@ -22,4 +11,12 @@ vsc-extension-quickstart.md
 out/test/**
 .github/**
 webpack.config.js
-docker-compose.yml
+USAGE_GUIDE.md
+run-mcp-server.sh
+
+# Don't ignore these node modules
+!node_modules/ws/**
+!node_modules/@types/ws/**
+!node_modules/axios/**
+!node_modules/child_process/**
+!node_modules/events/**

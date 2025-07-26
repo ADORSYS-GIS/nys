@@ -2,7 +2,7 @@
   "name": "nys",
   "displayName": "nys",
   "description": "MCP Client extension for VS Code",
-  "version": "0.2.2",
+  "version": "1.2.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/yourusername/vscode-mcp-client.git"
@@ -51,12 +51,22 @@
         "mcpClient.serverUrl": {
           "type": "string",
           "default": "http://localhost:8080",
-          "description": "URL of the MCP server"
+          "description": "URL of the MCP server or path to MCP server binary for stdio mode"
         },
         "mcpClient.apiKey": {
           "type": "string",
           "default": "",
           "description": "API Key for the LLM service"
+        },
+        "mcpClient.serverType": {
+          "type": "string",
+          "enum": [
+            "standard",
+            "filesystem",
+            "stdio"
+          ],
+          "default": "standard",
+          "description": "Type of MCP server connection (standard, filesystem, or stdio)"
         }
       }
     }
@@ -74,7 +84,8 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "package": "npx vsce package --no-dependencies --no-git-tag-version --no-update-package-json"
+    "package": "npx vsce package --no-dependencies --no-git-tag-version --no-update-package-json",
+    "bundle": "node ./scripts/bundle-extension.js"
   },
   "devDependencies": {
     "@azure/abort-controller": "1.0.0",
@@ -104,7 +115,7 @@
     "@azure/msal-common": "^4.0.0",
     "@azure/msal-node": "^1.0.0",
     "@typespec/ts-http-runtime": "^0.1.0",
-    "axios": "^1.4.0",
+    "axios": "^1.11.0",
     "ws": "^8.18.3"
   }
 }

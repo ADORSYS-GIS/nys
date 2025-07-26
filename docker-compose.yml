@@ -1,18 +1,18 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  mcp-filesystem:
-    image: mcp/filesystem
-    container_name: mcp-filesystem-server
-    ports:
-      - "8080:8080"
-    volumes:
-      # Mount your project directory
-      - ./:/workspace
-      # Optional: Mount additional directories
-      # - /home/christian:/home/christian
-      # - /tmp:/tmp
-    command: ["/workspace"]  # This is the <allowed-directory>
-    stdin_open: true  # Equivalent to -i flag
-    tty: true        # Equivalent to -t flag
-    restart: unless-stopped
+  github-mcp-server:
+    image: ghcr.io/github/github-mcp-server:latest
+    container_name: github-mcp-server
+    # Ports are no longer needed for stdio mode
+    environment:
+      # This token will be passed by the extension, but you can keep it here for other uses
+      GITHUB_PERSONAL_ACCESS_TOKEN: ""
+    # The command should be 'stdio'
+    command: ["stdio"]
+    # 'stdin_open' is required for the extension to write to the process
+    stdin_open: true 
+    tty: true
+    # Uncomment if your extension requires a mounted config or cache directory:
+    # volumes:
+    #   - ./your-local-data:/data

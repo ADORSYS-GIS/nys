@@ -1,0 +1,93 @@
+/**
+ * This script bundles the extension with all required dependencies
+ */
+
+const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+
+const packageJsonPath = path.join(__dirname, '..', 'package.json');
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+const version = packageJson.version;
+const name = packageJson.name;
+
+console.log(`🚀 Bundling ${name} v${version} with dependencies...\n`);
+
+try {
+  // 1. Clean previous build artifacts
+  console.log('1️⃣ Cleaning previous build artifacts...');
+  if (fs.existsSync(path.join(__dirname, '..', 'node_modules'))) {
+    execSync('rm -rf node_modules', { stdio: 'inherit' });
+  }
+  if (fs.existsSync(path.join(__dirname, '..', 'package-lock.json'))) {
+    execSync('rm -f package-lock.json', { stdio: 'inherit' });
+  }
+  console.log('✅ Cleanup complete!\n');
+
+  // 2. Install only the required dependencies
+  console.log('2️⃣ Installing dependencies...');
+  execSync('npm install --no-package-lock ws axios', { stdio: 'inherit' });
+  console.log('✅ Dependencies installed!\n');
+
+  // 3. Create a temporary .vscodeignore file that won't exclude node_modules
+  console.log('3️⃣ Creating temporary .vscodeignore file...');
+  const vscodeignorePath = path.join(__dirname, '..', '.vscodeignore');
+  let vscodeignoreContent = '';
+
+  if (fs.existsSync(vscodeignorePath)) {
+    vscodeignoreContent = fs.readFileSync(vscodeignorePath, 'utf8');
+  }
+
+  // Create a backup of the original .vscodeignore
+  fs.writeFileSync(`${vscodeignorePath}.backup`, vscodeignoreContent);
+
+  // Create a new .vscodeignore that doesn't exclude node_modules
+  const newVscodeignore = vscodeignoreContent
+    .split('\n')
+    .filter(line => !line.includes('node_modules'))
+    .join('\n');
+
+  // Add rules to include only needed node_modules
+  const finalVscodeignore = `${newVscodeignore}\n\n# Include only needed dependencies\nnode_modules/**\n!node_modules/ws/**\n!node_modules/axios/**\n!node_modules/buffer-from/**\n!node_modules/event-target-shim/**\n!node_modules/follow-redirects/**\n!node_modules/proxy-from-env/**\n!node_modules/form-data/**\n!node_modules/asynckit/**\n!node_modules/combined-stream/**\n!node_modules/mime-types/**\n!node_modules/mime-db/**\n!node_modules/delayed-stream/**\n`;
+
+  fs.writeFileSync(vscodeignorePath, finalVscodeignore);
+  console.log('✅ .vscodeignore updated!\n');
+
+  // 4. Compile the TypeScript code
+  console.log('4️⃣ Compiling TypeScript...');
+  execSync('npm run compile', { stdio: 'inherit' });
+  console.log('✅ Compilation successful!\n');
+
+  // 5. Package the extension
+  console.log('5️⃣ Packaging extension...');
+  execSync('npx vsce package --no-yarn', { stdio: 'inherit' });
+  console.log(`✅ Extension packaged successfully!\n`);
+
+  // 6. Restore the original .vscodeignore
+  console.log('6️⃣ Restoring original .vscodeignore...');
+  fs.copyFileSync(`${vscodeignorePath}.backup`, vscodeignorePath);
+  fs.unlinkSync(`${vscodeignorePath}.backup`);
+  console.log('✅ Original .vscodeignore restored!\n');
+
+  console.log(`🎉 VSIX package created: ${name}-${version}.vsix`);
+  console.log('\nYou can install this package in VS Code:');
+  console.log('1. Open VS Code');
+  console.log('2. Go to Extensions (Ctrl+Shift+X)');
+  console.log('3. Click the "..." menu in the top-right corner');
+  console.log('4. Select "Install from VSIX..."');
+  console.log(`5. Navigate to and select ${name}-${version}.vsix`);
+} catch (error) {
+  console.error(`\n❌ Error during bundling: ${error.message}`);
+
+  // Attempt to restore the original .vscodeignore if it exists
+  const vscodeignorePath = path.join(__dirname, '..', '.vscodeignore');
+  const backupPath = `${vscodeignorePath}.backup`;
+
+  if (fs.existsSync(backupPath)) {
+    console.log('Restoring original .vscodeignore from backup...');
+    fs.copyFileSync(backupPath, vscodeignorePath);
+    fs.unlinkSync(backupPath);
+  }
+
+  process.exit(1);
+}
