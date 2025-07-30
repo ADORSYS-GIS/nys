@@ -63,12 +63,6 @@ try {
   execSync('npx vsce package --no-yarn', { stdio: 'inherit' });
   console.log(`✅ Extension packaged successfully!\n`);
 
-// Get version from package.json
-const packageJsonPath = path.join(__dirname, '..', 'package.json');
-const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-const version = packageJson.version;
-const name = packageJson.name;
-
 console.log(`Bundling ${name} v${version} with dependencies...`);
 
   // 6. Restore the original .vscodeignore
@@ -100,11 +94,6 @@ console.log(`Bundling ${name} v${version} with dependencies...`);
   process.exit(1);
 }
 
-// Read extension details from package.json
-const packageJsonPath = path.join(__dirname, '..', 'package.json');
-const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-const name = packageJson.name;
-const version = packageJson.version;
 const vsixFilename = `${name}-${version}.vsix`;
 
 // Function to execute shell commands with better error handling

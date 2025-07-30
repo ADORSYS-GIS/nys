@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { McpClient } from './mcp/mcpClient';
-import { StatusBarManager } from './statusBar';
+import {McpClient, McpServerType} from './mcp/mcpClient';
+import {StatusBarManager} from './statusBar';
 
 let mcpClient: McpClient;
 let statusBarManager: StatusBarManager;
@@ -20,6 +20,8 @@ export function activate(context: vscode.ExtensionContext) {
       const config = vscode.workspace.getConfiguration('mcpClient');
       const serverUrl = config.get<string>('serverUrl');
       const apiKey = config.get<string>('apiKey');
+      const serverTypeString = config.get<string>('serverType', 'stdio');
+      const serverType = serverTypeString === 'stdio' ? McpServerType.Stdio : McpServerType.Standard;
 
       if (!serverUrl) {
         throw new Error('Server URL not configured');
@@ -29,7 +31,7 @@ export function activate(context: vscode.ExtensionContext) {
         throw new Error('API Key not configured');
       }
 
-      await mcpClient.connect(serverUrl, apiKey);
+      await mcpClient.connect(serverUrl, apiKey, serverType);
       statusBarManager.setConnected(true, serverUrl);
       vscode.window.showInformationMessage(`Connected to MCP server at ${serverUrl}`);
     } catch (error) {

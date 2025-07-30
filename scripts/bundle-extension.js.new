@@ -26,7 +26,7 @@ try {
 
   // 2. Install only the required dependencies
   console.log('2️⃣ Installing dependencies...');
-  execSync('npm install --no-package-lock ws axios', { stdio: 'inherit' });
+  execSync('npm install --no-package-lock ws axios es-set-tostringtag@2.1.0 follow-redirects form-data', { stdio: 'inherit' });
   console.log('✅ Dependencies installed!\n');
 
   // 3. Create a temporary .vscodeignore file that won't exclude node_modules
@@ -48,7 +48,7 @@ try {
     .join('\n');
 
   // Add rules to include only needed node_modules
-  const finalVscodeignore = `${newVscodeignore}\n\n# Include only needed dependencies\nnode_modules/**\n!node_modules/ws/**\n!node_modules/axios/**\n!node_modules/buffer-from/**\n!node_modules/event-target-shim/**\n!node_modules/follow-redirects/**\n!node_modules/proxy-from-env/**\n!node_modules/form-data/**\n!node_modules/asynckit/**\n!node_modules/combined-stream/**\n!node_modules/mime-types/**\n!node_modules/mime-db/**\n!node_modules/delayed-stream/**\n`;
+  const finalVscodeignore = `${newVscodeignore}\n\n# Include only needed dependencies\nnode_modules/**\n!node_modules/ws/**\n!node_modules/axios/**\n!node_modules/buffer-from/**\n!node_modules/event-target-shim/**\n!node_modules/follow-redirects/**\n!node_modules/proxy-from-env/**\n!node_modules/form-data/**\n!node_modules/asynckit/**\n!node_modules/combined-stream/**\n!node_modules/mime-types/**\n!node_modules/mime-db/**\n!node_modules/delayed-stream/**\n!node_modules/es-set-tostringtag/**\n!node_modules/has-tostringtag/**\n!node_modules/es-errors/**\n!node_modules/get-intrinsic/**\n!node_modules/has-symbols/**\n!node_modules/es-define-property/**\n!node_modules/es-object-atoms/**\n!node_modules/call-bind/**\n`;
 
   fs.writeFileSync(vscodeignorePath, finalVscodeignore);
   console.log('✅ .vscodeignore updated!\n');

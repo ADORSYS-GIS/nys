@@ -1,7 +1,6 @@
 import WebSocket from 'ws';
 import axios from 'axios';
 import { EventEmitter } from 'events';
-import * as vscode from 'vscode';
 import { spawn, ChildProcess } from 'child_process';
 
 // MCP server types
@@ -40,7 +39,7 @@ export class McpClient extends EventEmitter {
 
     try {
       // If using stdio mode, start child process for MCP server
-      if (this.serverType === McpServerType.Stdio) {
+   if (this.serverType === McpServerType.Stdio) {
         console.log('Connecting to MCP server via stdio...');
         return this.connectViaStdio(serverUrl);
       }
@@ -68,7 +67,7 @@ export class McpClient extends EventEmitter {
         const baseUrl = this.serverUrl.replace(/^https?:\/\//, '');
         const wsUrl = `${wsScheme}://${baseUrl}/api/ws/${this.sessionId}`;
         this.connection = new WebSocket(wsUrl);
-      } 
+      }
       // If using filesystem MCP server, connect directly via WebSocket
       else if (this.serverType === McpServerType.FileSystem) {
         console.log('Connecting to MCP Filesystem server...');

@@ -65,8 +65,8 @@
             "filesystem",
             "stdio"
           ],
-          "default": "standard",
-          "description": "Type of MCP server connection (standard, filesystem, or stdio)"
+          "default": "stdio",
+          "description": "The type of MCP server: 'standard', 'filesystem', or 'stdio'"
         }
       }
     }
@@ -116,6 +116,10 @@
     "@azure/msal-node": "^1.0.0",
     "@typespec/ts-http-runtime": "^0.1.0",
     "axios": "^1.11.0",
+    "es-set-tostringtag": "^2.1.0",
+    "follow-redirects": "^1.15.9",
+    "form-data": "^4.0.4",
+    "math-intrinsics": "^1.1.0",
     "ws": "^8.18.3"
   }
 }

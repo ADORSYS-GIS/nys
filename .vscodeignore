@@ -15,8 +15,3 @@ USAGE_GUIDE.md
 run-mcp-server.sh
 
 # Don't ignore these node modules
-!node_modules/ws/**
-!node_modules/@types/ws/**
-!node_modules/axios/**
-!node_modules/child_process/**
-!node_modules/events/**
