@@ -2,18 +2,18 @@
   "name": "nys",
   "displayName": "nys",
   "description": "MCP Client extension for VS Code",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/vscode-mcp-client.git"
+    "url": "https://github.com/Christiantyemele/mimie.git"
   },
   "engines": {
     "vscode": "^1.60.0"
   },
   "publisher": "Christian237",
-  "homepage": "https://github.com/yourusername/vscode-mcp-client",
+  "homepage": "https://github.com/Christiantyemele/mimie.git",
   "bugs": {
-    "url": "https://github.com/yourusername/vscode-mcp-client/issues"
+    "url": "https://github.com/Christiantyemele/mimie.git"
   },
   "keywords": [
     "mcp",
@@ -27,7 +27,7 @@
   "activationEvents": [
     "onCommand:vscode-mcp-client.connect"
   ],
-  "icon": "images/icon.png",
+  "icon": "images/ext.jpeg",
   "main": "./out/extension.js",
   "browser": "./out/extension.js",
   "contributes": {
