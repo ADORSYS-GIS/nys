@@ -202,7 +202,18 @@ The extension provides the following settings:
 
 - `mcpClient.serverUrl`: URL of the MCP server or path to MCP server binary for stdio mode
 - `mcpClient.apiKey`: API Key for the LLM service
+- `mcpClient.githubToken`: GitHub Personal Access Token required for github-mcp-server
 - `mcpClient.serverType`: Type of MCP server connection (standard, filesystem, or stdio)
+
+### GitHub MCP Server Configuration
+
+To use with the GitHub MCP server:
+
+1. Set `mcpClient.serverUrl` to the path of your github-mcp-server binary (e.g., `/home/user/mcp/github-mcp-server`)
+2. Set `mcpClient.githubToken` to your GitHub Personal Access Token
+3. Set `mcpClient.serverType` to `stdio`
+
+See [GITHUB_TOKEN_GUIDE.md](GITHUB_TOKEN_GUIDE.md) for detailed instructions on setting up your GitHub token.
 
 ## Development
 
@@ -255,7 +266,68 @@ These servers use direct WebSocket communication without HTTP. To use with the M
 docker-compose up -d
 ```
 # VS Code MCP Client Extension
+# MCP Client Extension for VS Code
 
+This extension provides MCP Client functionality for VS Code.
+
+## Packaging Options
+
+There are several ways to package this extension:
+
+### 1. Webpack Bundle (Recommended)
+
+This creates a VSIX with a single bundled JavaScript file containing all dependencies:
+
+```bash
+npm run webpack-bundle
+```
+
+This is the most reliable approach as it bundles all code into a single file, avoiding dependency issues.
+
+### 2. Full Package with All Dependencies
+
+This creates a VSIX that includes all node_modules dependencies:
+
+```bash
+npm run create-full-vsix
+```
+
+This approach ensures all dependencies are included in the VSIX package.
+
+### 3. Bundle with Required Dependencies Only
+
+This creates a smaller VSIX that includes only the essential dependencies:
+
+```bash
+npm run bundle
+```
+
+This approach modifies the .vscodeignore file temporarily to include only specified dependencies.
+
+### 4. Standard Package (No Dependencies)
+
+This creates a VSIX that excludes node_modules, relying on dependencies being installed separately:
+
+```bash
+npm run package-no-deps
+```
+
+## Installation
+
+To install the extension in VS Code:
+
+1. Open VS Code
+2. Go to Extensions (Ctrl+Shift+X)
+3. Click the "..." menu in the top-right corner
+4. Select "Install from VSIX..."
+5. Navigate to and select the generated VSIX file
+
+## Development
+
+- `npm run compile` - Compile TypeScript
+- `npm run watch` - Watch for changes
+- `npm run lint` - Lint code
+- `npm test` - Run tests
 A VS Code extension that connects to MCP (Machine Coding Protocol) servers to provide AI-assisted coding capabilities.
 
 ## Features

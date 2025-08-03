@@ -13,5 +13,6 @@ out/test/**
 webpack.config.js
 USAGE_GUIDE.md
 run-mcp-server.sh
+scripts/**
 
-# Don't ignore these node modules
+# Include only needed dependencies

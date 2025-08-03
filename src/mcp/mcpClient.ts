@@ -2,6 +2,12 @@ import WebSocket from 'ws';
 import axios from 'axios';
 import { EventEmitter } from 'events';
 import { spawn, ChildProcess } from 'child_process';
+import { 
+  buildJsonRpcRequest, 
+  buildJsonRpcNotification, 
+  buildToolCallRequest, 
+  buildPromptRequest 
+} from './jsonRpc';
 
 // MCP server types
 export enum McpServerType {
@@ -130,10 +136,37 @@ export class McpClient extends EventEmitter {
 
         console.log(`Spawning process: ${command} ${args.join(' ')}`);
 
-        // Set up environment variables including API key if provided
+        // Set up environment variables including GitHub token and API key
         const env = { ...process.env };
-        if (this.apiKey) {
-          env['GITHUB_PERSONAL_ACCESS_TOKEN'] = this.apiKey;
+
+        // For the GitHub MCP server, we need to set GITHUB_PERSONAL_ACCESS_TOKEN
+        // regardless of its format (it doesn't need to start with github_ or ghp_)
+        if (command.includes('github-mcp-server') || command.includes('mcp/github-mcp-server')) {
+          console.log('GitHub MCP server detected, setting GITHUB_PERSONAL_ACCESS_TOKEN');
+
+          if (this.apiKey) {
+            env['GITHUB_PERSONAL_ACCESS_TOKEN'] = this.apiKey;
+            console.log('Using provided token for GitHub MCP server');
+          } else {
+            console.log('WARNING: No GitHub token provided');
+          }
+        }
+        // For other API-based services
+        else if (this.apiKey) {
+          // Check if it looks like a GitHub token
+          if (this.apiKey.startsWith('github_') || this.apiKey.startsWith('ghp_')) {
+            env['GITHUB_PERSONAL_ACCESS_TOKEN'] = this.apiKey;
+            console.log('Using provided API key as GitHub Personal Access Token');
+          }
+
+          // Always set API_KEY anyway
+          env['API_KEY'] = this.apiKey;
+
+          // Try to get GitHub token from env var if not already set
+          if (!env['GITHUB_PERSONAL_ACCESS_TOKEN'] && process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
+            env['GITHUB_PERSONAL_ACCESS_TOKEN'] = process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+            console.log('Using GITHUB_PERSONAL_ACCESS_TOKEN from environment');
+          }
         }
 
         // Spawn the child process
@@ -170,10 +203,14 @@ export class McpClient extends EventEmitter {
           });
         }
 
-        // Assume connection is successful immediately
-        // Most stdio servers start accepting input right away
-        console.log('Connected to MCP server via stdio');
-        resolve();
+        // Initialize the GitHub MCP server with JSON-RPC 2.0
+        this.initializeJsonRpcServer().then(() => {
+          console.log('JSON-RPC initialization complete');
+          resolve();
+        }).catch(error => {
+          console.error('JSON-RPC initialization failed:', error);
+          reject(error);
+        });
       } catch (error) {
         console.error('Failed to connect via stdio:', error);
         reject(error);
@@ -200,18 +237,40 @@ export class McpClient extends EventEmitter {
           const message = JSON.parse(jsonStr);
           console.log('Received message from stdio:', JSON.stringify(message).substring(0, 200) + '...');
 
-          // Process the message similarly to WebSocket messages
-          if (message.id) {
-            // JSON-RPC style response
-            if (message.error) {
-              this.emit(`response:${message.id}`, { error: message.error.message || 'Unknown error' });
-            } else if (message.result) {
-              this.emit(`response:${message.id}`, { response: message.result.response || message.result });
+          // Process JSON-RPC 2.0 responses
+          if (message.jsonrpc === '2.0') {
+            if (message.id) {
+              // This is a response to a request (has an id)
+              if (message.error) {
+                // Error response
+                this.emit(`response:${message.id}`, { 
+                  error: message.error.message || message.error.code || 'Unknown error' 
+                });
+              } else if (message.result !== undefined) {
+                // Success response - extract the result
+                let responseContent = message.result;
+
+                // Handle different result formats based on method type
+                if (typeof responseContent === 'object' && responseContent !== null) {
+                  // If the response has a specific structure, extract the relevant part
+                  if (responseContent.response) {
+                    responseContent = responseContent.response;
+                  } else if (responseContent.content) {
+                    responseContent = responseContent.content;
+                  }
+                }
+
+                this.emit(`response:${message.id}`, { response: responseContent });
+              }
+            } else {
+              // This is a notification (no id) - we generally don't need to handle these
+              console.log('Received notification from server:', message.method);
             }
           } else if (message.type === 'response' && message.messageId) {
-            // Standard MCP protocol response
+            // Legacy standard MCP protocol response (non-JSON-RPC)
             this.emit(`response:${message.messageId}`, message.content);
           } else if (message.type === 'error') {
+            // Legacy error format
             this.emit('error', new Error(message.content?.error || 'Unknown error'));
           }
         } catch (error) {
@@ -260,6 +319,68 @@ export class McpClient extends EventEmitter {
   }
 
   /**
+   * Initialize the JSON-RPC 2.0 server connection
+   * Follows the GitHub MCP server initialization protocol
+   */
+  private async initializeJsonRpcServer(): Promise<void> {
+    if (!this.childProcess || !this.childProcess.stdin) {
+      throw new Error('Child process not initialized');
+    }
+
+    return new Promise((resolve, reject) => {
+      // Set up a one-time listener for the initialize response
+      const initId = 1; // Use a fixed ID for initialization
+      this.once(`response:${initId}`, (data) => {
+        if (data.error) {
+          reject(new Error(data.error));
+        } else {
+          // Send initialized notification (no response expected)
+          const notification = buildJsonRpcNotification('notifications/initialized');
+          if (!this.childProcess || !this.childProcess.stdin) {
+            const err = new Error('Child process or stdin is not available');
+            console.error(err);
+            return reject(err);
+          }
+          this.childProcess.stdin.write(JSON.stringify(notification) + '\n', (error) => {
+            if (error) {
+              console.error('Error sending initialized notification:', error);
+              reject(error);
+            } else {
+              console.log('MCP Server initialized successfully');
+              resolve();
+            }
+          });
+        }
+      });
+
+      // Step 1: Send initialize request
+      const initializeRequest = {
+        jsonrpc: "2.0",
+        method: "initialize",
+        params: {
+          protocolVersion: "2025-03-26",
+          capabilities: { roots: {}, sampling: {} },
+          clientInfo: { name: "vscode-mcp-client", version: "1.0.0" }
+        },
+        id: initId
+      };
+
+      console.log('Sending initialize request to MCP server');
+      if (!this.childProcess || !this.childProcess.stdin) {
+        const err = new Error('Child process or stdin is not available');
+        console.error(err);
+        return reject(err);
+      }
+      this.childProcess.stdin.write(JSON.stringify(initializeRequest) + '\n', (error) => {
+        if (error) {
+          console.error('Error sending initialize request:', error);
+          reject(error);
+        }
+      });
+    });
+  }
+
+  /**
    * Disconnect from the MCP server
    */
   public disconnect(): void {
@@ -279,6 +400,57 @@ export class McpClient extends EventEmitter {
   }
 
   /**
+   * Send a JSON-RPC request to the MCP server
+   * @param request The JSON-RPC request object
+   * @returns Promise resolving to the response
+   */
+  public async sendJsonRpcRequest(request: any): Promise<any> {
+    if (!this.isConnected()) {
+      throw new Error('Not connected to MCP server');
+    }
+
+    return new Promise((resolve, reject) => {
+      try {
+        const messageId = request.id;
+
+        // Set up a one-time listener for this specific message ID
+        this.once(`response:${messageId}`, (data) => {
+          if (data.error) {
+            reject(new Error(data.error));
+          } else {
+            resolve(data.response);
+          }
+        });
+
+        // Handle stdio server type
+        if (this.serverType === McpServerType.Stdio && this.childProcess && this.childProcess.stdin) {
+          console.log("Sending JSON-RPC request via stdio:", request);
+          const jsonString = JSON.stringify(request) + '\n';
+          this.childProcess.stdin.write(jsonString, (error) => {
+            if (error) {
+              console.error('Error writing to stdin:', error);
+              reject(error);
+            }
+          });
+          return; // Return early, we've sent the request via stdio
+        }
+
+        // Handle WebSocket-based server types
+        if (!this.connection) {
+          reject(new Error('WebSocket connection not established'));
+          return;
+        }
+
+        console.log("Sending WebSocket request:", request);
+        this.connection.send(JSON.stringify(request));
+      } catch (error) {
+        console.error('Error sending JSON-RPC request:', error);
+        reject(error);
+      }
+    });
+  }
+
+  /**
    * Check if connected to the MCP server
    */
   public isConnected(): boolean {
@@ -291,7 +463,7 @@ export class McpClient extends EventEmitter {
   /**
    * Execute a prompt against the MCP server
    */
-  public async executePrompt(prompt: string, context: string = ''): Promise<string> {
+  public async executePrompt(userPrompt: string, context: string = ''): Promise<string> {
     if (!this.isConnected()) {
       throw new Error('Not connected to MCP server');
     }
@@ -310,16 +482,40 @@ export class McpClient extends EventEmitter {
           }
         });
 
-        // Format message according to server type
-        let message;
+        // Handle stdio server type
+        if (this.serverType === McpServerType.Stdio && this.childProcess && this.childProcess.stdin) {
+          // Create a JSON-RPC 2.0 prompt request
+          const promptRequest = buildPromptRequest(userPrompt, context);
 
+          // Override the ID to use our custom messageId for tracking
+          promptRequest.id = messageId;
+
+          console.log("Sending JSON-RPC prompt request via stdio:", promptRequest);
+          const jsonString = JSON.stringify(promptRequest) + '\n';
+          this.childProcess.stdin.write(jsonString, (error) => {
+            if (error) {
+              console.error('Error writing to stdin:', error);
+              reject(error);
+            }
+          });
+          return; // Return early, we've sent the request via stdio
+        }
+
+        // Handle WebSocket-based server types
+        if (!this.connection) {
+          reject(new Error('WebSocket connection not established'));
+          return;
+        }
+
+        let message;
         if (this.serverType === McpServerType.FileSystem) {
-          // Filesystem MCP format
+          // Filesystem MCP format - use JSON-RPC 2.0
           message = {
+            jsonrpc: "2.0",
             id: messageId,
             method: 'generate',
             params: {
-              prompt,
+              prompt: userPrompt,
               context: context || undefined
             }
           };
@@ -329,28 +525,16 @@ export class McpClient extends EventEmitter {
             type: 'prompt',
             messageId,
             content: {
-              prompt,
+              prompt: userPrompt,
               context
             }
           };
         }
 
-        if (this.serverType === McpServerType.Stdio && this.childProcess && this.childProcess.stdin) {
-          // Send message over stdio
-          const jsonString = JSON.stringify(message) + '\n';
-          this.childProcess.stdin.write(jsonString, (error) => {
-            if (error) {
-              console.error('Error writing to stdin:', error);
-              reject(error);
-            }
-          });
-        } else if (this.connection) {
-          // Send message over WebSocket
-          this.connection.send(JSON.stringify(message));
-        } else {
-          reject(new Error('Connection not established'));
-        }
+        console.log("Sending WebSocket request:", message);
+        this.connection.send(JSON.stringify(message));
       } catch (error) {
+        console.error('Error executing prompt:', error);
         reject(error);
       }
     });
@@ -367,20 +551,33 @@ export class McpClient extends EventEmitter {
         const message = JSON.parse(data.toString());
         console.log('Received message:', JSON.stringify(message).substring(0, 200) + '...');
 
-        if (this.serverType === McpServerType.FileSystem) {
-          // Handle filesystem MCP protocol responses
+        if (this.serverType === McpServerType.FileSystem || message.jsonrpc === '2.0') {
+          // Handle JSON-RPC 2.0 responses (both filesystem and github MCP servers)
           if (message.id) {
-            // The id field in the response matches our request id
             if (message.error) {
               // Error response
-              this.emit(`response:${message.id}`, { error: message.error.message || 'Unknown error' });
-            } else if (message.result) {
-              // Success response
-              this.emit(`response:${message.id}`, { response: message.result.response || message.result });
+              this.emit(`response:${message.id}`, { 
+                error: message.error.message || message.error.code || 'Unknown error' 
+              });
+            } else if (message.result !== undefined) {
+              // Success response - extract the result
+              let responseContent = message.result;
+
+              // Handle different result formats based on method type
+              if (typeof responseContent === 'object' && responseContent !== null) {
+                // If the response has a specific structure, extract the relevant part
+                if (responseContent.response) {
+                  responseContent = responseContent.response;
+                } else if (responseContent.content) {
+                  responseContent = responseContent.content;
+                }
+              }
+
+              this.emit(`response:${message.id}`, { response: responseContent });
             }
           }
         } else {
-          // Handle standard MCP protocol responses
+          // Handle standard MCP protocol responses (legacy format)
           if (message.type === 'response' && message.messageId) {
             this.emit(`response:${message.messageId}`, message.content);
           } else if (message.type === 'error') {
