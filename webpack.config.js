@@ -16,7 +16,9 @@ const config = {
   },
   devtool: 'source-map',
   externals: {
-    vscode: 'commonjs vscode'
+    vscode: 'commonjs vscode',
+    // These are bundled with VS Code and don't need to be included
+    'electron': 'commonjs electron'
   },
   resolve: {
     extensions: ['.ts', '.js']
@@ -33,6 +35,11 @@ const config = {
         ]
       }
     ]
+  },
+  // Add all node_modules to bundle except vscode
+  // This ensures all dependencies are included in the webpack output
+  optimization: {
+    minimize: true
   }
 };
 

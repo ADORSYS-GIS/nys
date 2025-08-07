@@ -10,7 +10,7 @@ export class StatusBarManager {
   constructor() {
     // Create the connection status item
     this.connectionStatusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-    this.connectionStatusItem.command = 'vscode-mcp-client.connect';
+    this.connectionStatusItem.command = 'vscode-mcp-client.openChatView';
     this.setConnected(false);
     this.connectionStatusItem.show();
 
@@ -27,7 +27,7 @@ export class StatusBarManager {
       this.connectionStatusItem.text = `$(check) MCP Connected: ${serverUrl}`;
       this.connectionStatusItem.tooltip = `Connected to MCP server at ${serverUrl}`;
     } else {
-      this.connectionStatusItem.text = '$(plug) Connect MCP';
+      this.connectionStatusItem.text = '$(comment-discussion) Chat with AI';
       this.connectionStatusItem.tooltip = 'Connect to MCP server';
     }
   }

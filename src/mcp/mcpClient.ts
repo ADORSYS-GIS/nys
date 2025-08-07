@@ -416,7 +416,13 @@ export class McpClient extends EventEmitter {
         // Set up a one-time listener for this specific message ID
         this.once(`response:${messageId}`, (data) => {
           if (data.error) {
-            reject(new Error(data.error));
+                // Return complete error information including status and message for better debugging
+                const errorObject = {
+                  status: data.error.code || 500,
+                  message: data.error.message || data.error,
+                  details: data.error.data || null
+                };
+                reject(errorObject);
           } else {
             resolve(data.response);
           }
