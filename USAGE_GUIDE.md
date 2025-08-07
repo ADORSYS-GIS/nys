@@ -9,7 +9,7 @@ This guide provides detailed instructions for setting up and using the VS Code M
 - The VS Code MCP Client extension installed
 
 ## Setup Instructions
-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
+
 ### 1. Start the MCP Filesystem Server
 
 The easiest way to get started is with the MCP Filesystem server from Docker Hub:
