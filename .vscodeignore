@@ -1,16 +1,5 @@
 .vscode/**
 .vscode-test/**
-!node_modules/axios/**
-!node_modules/ws/**
-.gitignore
-.yarnrc
-vsc-extension-quickstart.md
-**/tsconfig.json
-**/.eslintrc.json
-**/*.map
-**/*.ts
-.vscode/**
-.vscode-test/**
 .gitignore
 .yarnrc
 vsc-extension-quickstart.md
@@ -22,4 +11,8 @@ vsc-extension-quickstart.md
 out/test/**
 .github/**
 webpack.config.js
-docker-compose.yml
+USAGE_GUIDE.md
+run-mcp-server.sh
+scripts/**
+
+# Include only needed dependencies

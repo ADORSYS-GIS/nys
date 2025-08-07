@@ -16,7 +16,7 @@ The easiest way to get started is with the MCP Filesystem server from Docker Hub
 
 ```bash
 # Option 1: Using docker run
-docker run -p 8080:8080 -v $(pwd):/workspace mcp/filesystem /workspace
+docker run -p 8080:8080 -v $(pwd):/workspace mcp/filesystem --mode websocket --port 8080 /workspace
 
 # Option 2: Using docker-compose
 docker-compose up -d
@@ -72,12 +72,26 @@ Make sure your Docker volume mapping is correct. The path you mount in the conta
 
 Example:
 ```bash
-docker run -p 8080:8080 -v $(pwd):/workspace mcp/filesystem /workspace
+docker run -p 8080:8080 -v $(pwd):/workspace mcp/filesystem --mode websocket --port 8080 /workspace
 ```
 
 Here `/workspace` appears twice:
 1. As the container path in the volume mapping
 2. As the allowed directory parameter to the MCP server
+
+### Command-Line Arguments
+
+When running the mcp/filesystem Docker container directly, you must properly specify command-line arguments:
+
+```bash
+# INCORRECT - Will cause ENOENT errors
+docker run -p 8080:8080 mcp/filesystem --mode websocket --port 8080
+
+# CORRECT - Arguments properly passed
+docker run -p 8080:8080 mcp/filesystem --mode websocket --port 8080 /workspace
+```
+
+The last argument `/workspace` is required and specifies the allowed directory for file access.
 
 ## Advanced Configuration
 

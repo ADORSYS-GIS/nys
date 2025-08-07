@@ -2,18 +2,19 @@
   "name": "nys",
   "displayName": "nys",
   "description": "MCP Client extension for VS Code",
-  "version": "0.2.2",
+  "version": "2.2.4",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/vscode-mcp-client.git"
+    "url": "https://github.com/Christiantyemele/mimie.git"
   },
   "engines": {
     "vscode": "^1.60.0"
   },
+  "engineStrict": false,
   "publisher": "Christian237",
-  "homepage": "https://github.com/yourusername/vscode-mcp-client",
+  "homepage": "https://github.com/Christiantyemele/mimie.git",
   "bugs": {
-    "url": "https://github.com/yourusername/vscode-mcp-client/issues"
+    "url": "https://github.com/Christiantyemele/mimie.git"
   },
   "keywords": [
     "mcp",
@@ -25,12 +26,35 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:vscode-mcp-client.connect"
+    "onCommand:vscode-mcp-client.connect",
+    "onCommand:vscode-mcp-client.executePrompt",
+    "onCommand:vscode-mcp-client.disconnect",
+    "onCommand:vscode-mcp-client.listTools",
+    "onView:mcpChat"
   ],
-  "icon": "images/icon.png",
+  "icon": "images/ext.jpeg",
   "main": "./out/extension.js",
   "browser": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "mcp-client",
+          "title": "MCP AI Chat",
+          "icon": "images/ext.jpeg"
+        }
+      ]
+    },
+    "views": {
+      "mcp-client": [
+        {
+          "id": "mcpChat",
+          "name": "AI Chat",
+          "type": "webview",
+          "when": "config.mcpClient.serverUrl"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "vscode-mcp-client.connect",
@@ -43,6 +67,14 @@
       {
         "command": "vscode-mcp-client.executePrompt",
         "title": "MCP: Execute Prompt"
+      },
+      {
+        "command": "vscode-mcp-client.listTools",
+        "title": "MCP: List Available Tools"
+      },
+      {
+        "command": "vscode-mcp-client.openChatView",
+        "title": "MCP: Open Chat View"
       }
     ],
     "configuration": {
@@ -51,14 +83,78 @@
         "mcpClient.serverUrl": {
           "type": "string",
           "default": "http://localhost:8080",
-          "description": "URL of the MCP server"
+          "description": "URL of the MCP server or path to MCP server binary for stdio mode"
         },
         "mcpClient.apiKey": {
           "type": "string",
           "default": "",
           "description": "API Key for the LLM service"
+        },
+        "mcpClient.modelProvider": {
+          "type": "string",
+          "enum": [
+            "openai",
+            "anthropic",
+            "gemini"
+          ],
+          "default": "openai",
+          "description": "LLM provider to use for parsing and other LLM operations"
+        },
+        "mcpClient.modelName": {
+          "type": "string",
+          "default": "",
+          "description": "Model name to use with the selected provider (leave empty for default model)"
+        },
+        "mcpClient.githubToken": {
+          "type": "string",
+          "default": "",
+          "description": "GitHub Personal Access Token required for github-mcp-server"
+        },
+        "mcpClient.serverType": {
+          "type": "string",
+          "enum": [
+            "standard",
+            "filesystem",
+            "stdio"
+          ],
+          "default": "stdio",
+          "description": "The type of MCP server: 'standard', 'filesystem', or 'stdio'"
+        },
+        "mcpClient.llmApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for the LLM service used for command parsing"
+        },
+        "mcpClient.useMockLlm": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use mock LLM implementation instead of making API calls (for testing or when no API key is available)"
         }
       }
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "command": "vscode-mcp-client.executePrompt",
+          "group": "ai@1",
+          "when": "editorTextFocus"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "vscode-mcp-client.connect"
+        },
+        {
+          "command": "vscode-mcp-client.disconnect",
+          "when": "false"
+        },
+        {
+          "command": "vscode-mcp-client.executePrompt"
+        },
+        {
+          "command": "vscode-mcp-client.listTools"
+        }
+      ]
     }
   },
   "capabilities": {
@@ -74,7 +170,19 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "package": "npx vsce package --no-dependencies --no-git-tag-version --no-update-package-json"
+    "package": "npx vsce package --no-git-tag-version --no-update-package-json",
+    "package-no-deps": "npx vsce package --no-dependencies --no-git-tag-version --no-update-package-json",
+    "simple-build": "bash ./scripts/simple-build.sh",
+    "install-typescript": "node ./scripts/install-typescript.js",
+    "bundle": "node ./scripts/bundle-extension.js",
+    "bundle-new": "node ./scripts/bundle-extension.js.new",
+    "fix-deps": "node ./scripts/fix-node-version.js",
+    "direct-install": "bash ./scripts/direct-install.sh",
+    "create-full-vsix": "node ./scripts/create-full-vsix.js",
+    "webpack-bundle": "node ./scripts/webpack-bundle.js",
+    "debug-github-token": "node ./scripts/fix-github-token.js",
+    "test-mcp-connection": "node ./scripts/direct-connect.js",
+    "fix-token-permission": "node ./scripts/fix-token-permission.js"
   },
   "devDependencies": {
     "@azure/abort-controller": "1.0.0",
@@ -83,8 +191,10 @@
     "@azure/core-rest-pipeline": "1.0.0",
     "@azure/core-tracing": "1.0.0",
     "@types/glob": "^7.1.3",
+    "@types/minimatch": "^6.0.0",
     "@types/mocha": "^8.2.2",
     "@types/node": "^14.14.37",
+    "@types/uuid": "^10.0.0",
     "@types/vscode": "^1.60.0",
     "@types/ws": "^8.5.4",
     "@typescript-eslint/eslint-plugin": "^4.22.0",
@@ -94,17 +204,28 @@
     "glob": "^7.1.6",
     "mocha": "^8.3.2",
     "typescript": "^4.2.4",
-    "vscode-test": "^1.5.2"
-  },
-  "dependencies": {
-    "@azure/core-util": "^1.0.0",
-    "@azure/identity": "^1.0.0",
-    "@azure/logger": "^1.0.0",
+    "ts-loader": "^8.1.0",
+    "webpack": "^5.80.0",
+    "webpack-cli": "^4.9.2",
+    "vscode-test": "^1.5.2",
+    "@azure/msal-node": "^1.0.0",
     "@azure/msal-browser": "^2.0.0",
     "@azure/msal-common": "^4.0.0",
-    "@azure/msal-node": "^1.0.0",
+    "@azure/identity": "^1.0.0",
+    "@azure/core-util": "^1.0.0",
+    "@azure/logger": "^1.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.17.1",
+    "@google/generative-ai": "^0.1.3",
     "@typespec/ts-http-runtime": "^0.1.0",
-    "axios": "^1.4.0",
+    "axios": "^1.11.0",
+    "es-set-tostringtag": "^2.1.0",
+    "follow-redirects": "^1.15.11",
+    "form-data": "^4.0.4",
+    "math-intrinsics": "^1.1.0",
+    "openai": "^4.28.0",
+    "uuid": "^8.3.2",
     "ws": "^8.18.3"
   }
 }
