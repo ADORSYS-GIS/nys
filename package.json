@@ -2,7 +2,7 @@
   "name": "nys",
   "displayName": "nys",
   "description": "MCP Client extension for VS Code",
-  "version": "2.2.4",
+  "version": "2.3.4",
   "repository": {
     "type": "git",
     "url": "https://github.com/Christiantyemele/mimie.git"
@@ -119,6 +119,16 @@
           ],
           "default": "stdio",
           "description": "The type of MCP server: 'standard', 'filesystem', or 'stdio'"
+          },
+          "mcpClient.showRawAssistantResponse": {
+            "type": "boolean",
+            "default": false,
+            "description": "Show raw assistant output (dev/testing only). If false, responses are pretty-printed."
+          },
+          "mcpClient.showSystemMessages": {
+            "type": "boolean",
+            "default": false,
+            "description": "Show system messages in chat (dev only). Recommended false for production."
         },
         "mcpClient.llmApiKey": {
           "type": "string",
@@ -129,6 +139,16 @@
           "type": "boolean",
           "default": true,
           "description": "Use mock LLM implementation instead of making API calls (for testing or when no API key is available)"
+        },
+        "mcpClient.showSystemMessages": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show system notes/messages in the chat (recommended off in production)"
+        },
+        "mcpClient.showRawAssistantResponse": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show raw JSON output from assistant (dev/testing only; disables pretty print in chat)"
         }
       }
     },
