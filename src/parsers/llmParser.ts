@@ -258,12 +258,13 @@ export class LlmParser {
       }
     }
 
-    // Full system prompt
+    // Full system prompt, now instructs snake_case
     return `You are a tool command parser. Your job is to convert natural language into structured tool commands.
 
 ${toolsDescription}
 
-Analyze the user's input and convert it to a tool command in the format: tool:toolName param1=value1 param2=value2
+ALWAYS use snake_case for tool names as defined in the available tools list.
+Analyze the user's input and convert it to a tool command in the format: tool:tool_name param1=value1 param2=value2
 
 If the input doesn't clearly specify a tool or parameters, make a best guess based on the context.
 If you cannot determine a suitable tool, respond with "NO_TOOL_MATCH".

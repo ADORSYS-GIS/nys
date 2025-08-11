@@ -129,7 +129,7 @@ export function activate(context: vscode.ExtensionContext) {
       // Import the EnhancedChatView class and InputParser
       const { EnhancedChatView } = await import('./enhancedChatView');
       const { InputParser } = await import('./parsers/inputParser');
-      const { ResponseFormatter } = await import('./formatters/responseFormatter');
+      const { LlmPresenter } = await import('./presentation/llmPresenter');
 
       const chatView = EnhancedChatView.getInstance();
       const inputParser = InputParser.getInstance();
@@ -141,37 +141,11 @@ export function activate(context: vscode.ExtensionContext) {
         inputParser.setAvailableTools(response.tools);
       }
 
-      // Format the response as a string
-      let formattedResponse = "Available MCP Tools:\n\n";
+      // Present the tools list with the LLM presenter as an HTML table
+      const html = await LlmPresenter.present('list_tools', response, 'List available tools');
 
-      if (Array.isArray(response)) {
-        response.forEach(tool => {
-          formattedResponse += `📌 ${tool.name}\n`;
-          formattedResponse += `${tool.description}\n\n`;
-
-          if (tool.parameters && Object.keys(tool.parameters).length > 0) {
-            formattedResponse += "Parameters:\n";
-            for (const paramName in tool.parameters) {
-              const param = tool.parameters[paramName];
-              formattedResponse += `  - ${paramName}: ${param.type || 'any'}`;
-              if (param.description) {
-                formattedResponse += ` (${param.description})`;
-              }
-              formattedResponse += "\n";
-            }
-          }
-
-          formattedResponse += `\nUsage: tool:${tool.name} param1=value1 param2=value2\n\n`;
-        });
-      } else {
-        formattedResponse += JSON.stringify(response, null, 2);
-      }
-
-      // Format the response
-      const finalResponse = ResponseFormatter.format(formattedResponse);
-
-      // Add the response to the chat
-      chatView.addMessage('assistant', finalResponse);
+      // Add the response to the chat as HTML
+      chatView.addMessage('assistant', html);
       chatView.show();
 
       statusBarManager.setProcessing(false);
@@ -215,7 +189,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const { EnhancedChatView } = await import('./enhancedChatView');
     const { InputParser } = await import('./parsers/inputParser');
-    const { ResponseFormatter } = await import('./formatters/responseFormatter');
+    const { LlmPresenter } = await import('./presentation/llmPresenter');
 
     const chatView = EnhancedChatView.getInstance();
     const inputParser = InputParser.getInstance();
@@ -307,11 +281,18 @@ export function activate(context: vscode.ExtensionContext) {
         response = await mcpClient.executePrompt(userInput, context);
       }
 
-      // Format the response for better readability
-      const formattedResponse = ResponseFormatter.format(response);
+      // Present the response via LLM into user-friendly HTML
+      let toolForPresentation = 'generic';
+      if (parseResult.toolCommand) {
+        try {
+          const [tp] = parseResult.toolCommand.split(' ');
+          toolForPresentation = tp.startsWith('tool:') ? tp.substring(5) : 'generic';
+        } catch {}
+      }
+      let presentedHtml = await LlmPresenter.present(toolForPresentation, response, userInput);
 
-      // Add the assistant's response to the chat
-      chatView.addMessage('assistant', formattedResponse);
+      // Add the assistant's response (HTML) to the chat
+      chatView.addMessage('assistant', presentedHtml);
 
       statusBarManager.setProcessing(false);
       chatView.setProcessing(false);

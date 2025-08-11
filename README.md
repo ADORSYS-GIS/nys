@@ -79,9 +79,29 @@ You can configure the extension in VS Code settings:
 ```json
 {
   "mcpClient.serverUrl": "ws://localhost:8080",
-  "mcpClient.apiKey": "your-api-key"
+  "mcpClient.apiKey": "your-api-key",
+  "mcpClient.modelProvider": "openai",
+  "mcpClient.modelName": "gpt-4-turbo"
 }
 ```
+
+### Model Provider Options
+
+The extension supports multiple LLM providers for parsing and AI operations:
+
+- **OpenAI** (default): Uses OpenAI API for models like GPT-3.5 or GPT-4
+  - Set `mcpClient.modelProvider` to `openai`
+  - Optional: Set `mcpClient.modelName` to a specific model name (default: `gpt-3.5-turbo`)
+
+- **Anthropic Claude**: Uses Anthropic's Claude models 
+  - Set `mcpClient.modelProvider` to `anthropic`
+  - Optional: Set `mcpClient.modelName` to a specific model name (default: `claude-3-sonnet-20240229`)
+
+- **Google Gemini**: Uses Google's Gemini models
+  - Set `mcpClient.modelProvider` to `gemini`
+  - Optional: Set `mcpClient.modelName` to a specific model name (default: `gemini-pro`)
+
+You'll need to provide an appropriate API key for your chosen provider in the `mcpClient.apiKey` setting.
 
 ### Commands
 
