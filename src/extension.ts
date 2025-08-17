@@ -46,40 +46,66 @@ export function activate(context: vscode.ExtensionContext) {
         throw new Error('Server URL not configured');
       }
 
-      // Check if we need to use the GitHub token instead of API key
-      if (serverUrl.includes('github-mcp-server') || serverUrl.includes('mcp/github-mcp-server')) {
-        console.log('GitHub MCP server detected');
+      // Prefer GitHub token automatically in stdio mode (common for GitHub MCP binaries),
+      // regardless of the server path string.
+      if (serverType === McpServerType.Stdio && githubToken) {
+        console.log('Stdio mode: using GitHub token from settings');
+        apiKey = githubToken;
+      }
 
-        // Use the GitHub token if available
-        if (githubToken) {
-          console.log('Using GitHub token from settings');
-          apiKey = githubToken;
-        } else if (!apiKey) {
-          // Prompt for GitHub token if neither token nor API key is configured
+      // Back-compat: also detect explicit github-mcp-server in path
+      if ((serverUrl.includes('github-mcp-server') || serverUrl.includes('mcp/github-mcp-server')) && githubToken) {
+        console.log('GitHub MCP server detected in path: using GitHub token from settings');
+        apiKey = githubToken;
+      }
+
+      // If still no key, prompt in stdio mode; otherwise require API key configured
+      if (!apiKey) {
+        if (serverType === McpServerType.Stdio) {
           const tokenInput = await vscode.window.showInputBox({
-            prompt: 'GitHub Personal Access Token is required for github-mcp-server',
-            placeHolder: 'Enter your GitHub Personal Access Token',
-            password: true // Hide the token as it's typed
+            prompt: 'A Personal Access Token is required for this MCP server (stdio mode)',
+            placeHolder: 'Enter your token',
+            password: true
           });
 
           if (!tokenInput) {
-            throw new Error('GitHub Personal Access Token is required for github-mcp-server');
+            throw new Error('A token is required to start the MCP server in stdio mode');
           }
 
           apiKey = tokenInput;
 
-          // Ask if the user wants to save the token in settings
           const saveToken = await vscode.window.showQuickPick(['Yes', 'No'], {
-            placeHolder: 'Do you want to save this token in your settings?'
+            placeHolder: 'Do you want to save this token in your settings (mcpClient.githubToken)?'
           });
 
           if (saveToken === 'Yes') {
             await config.update('githubToken', tokenInput, true);
-            vscode.window.showInformationMessage('GitHub token saved in settings');
+            vscode.window.showInformationMessage('Token saved in settings (mcpClient.githubToken)');
           }
+        } else {
+          throw new Error('API Key not configured');
         }
-      } else if (!apiKey) {
-        throw new Error('API Key not configured');
+      }
+
+      // Debug and ensure Authorization header for Standard HTTP/HTTPS
+      try {
+        const isHttp = serverType === McpServerType.Standard && (serverUrl.startsWith('http://') || serverUrl.startsWith('https://'));
+        const maskedToken = apiKey ? `${apiKey.substring(0, 4)}...${apiKey.slice(-4)}` : '(none)';
+        console.log(`[MCP Connect] serverType=${serverTypeString} url=${serverUrl} isHttp=${isHttp}`);
+        console.log(`[MCP Connect] tokenSource=${githubToken ? 'githubToken' : 'apiKey'} token(masked)=${maskedToken}`);
+        if (isHttp && apiKey) {
+          const authHeader = `Bearer ${apiKey}`;
+          const maskedHeader = `Bearer ${apiKey.substring(0, 4)}...${apiKey.slice(-4)}`;
+          console.log(`[MCP Connect] Will set Authorization header: ${maskedHeader}`);
+          // Provide the header/token to the client if it exposes any of these helpers
+          try { (mcpClient as any)?.setAuthHeader?.({ Authorization: authHeader }); } catch {}
+          try { (mcpClient as any)?.setBearerToken?.(apiKey); } catch {}
+          try { (mcpClient as any)?.setHeaders?.({ Authorization: authHeader }); } catch {}
+          // Fallback env variable in case client implementation reads it
+          try { (process as any).env.MCP_AUTH_BEARER = apiKey; } catch {}
+        }
+      } catch (logErr) {
+        console.warn('[MCP Connect] Debug/authorization setup error:', logErr);
       }
 
       await mcpClient.connect(serverUrl, apiKey, serverType);
@@ -190,6 +216,8 @@ export function activate(context: vscode.ExtensionContext) {
     const { EnhancedChatView } = await import('./enhancedChatView');
     const { InputParser } = await import('./parsers/inputParser');
     const { LlmPresenter } = await import('./presentation/llmPresenter');
+    const { CatalogService } = await import('./tools/catalogService');
+    const { PromptRewriter } = await import('./presentation/promptRewriter');
 
     const chatView = EnhancedChatView.getInstance();
     const inputParser = InputParser.getInstance();
@@ -204,9 +232,14 @@ export function activate(context: vscode.ExtensionContext) {
       const useLlmParser = typeof chatView.isUsingLlmParser === 'function' ? chatView.isUsingLlmParser() : false;
 
       // If LLM parser is enabled, ensure we have an API key
+      const config = vscode.workspace.getConfiguration('mcpClient');
+      let apiKey = config.get<string>('apiKey', '');
+      const githubToken = config.get<string>('githubToken', '');
+      const serverTypeString = config.get<string>('serverType', 'stdio');
+      const serverType = serverTypeString === 'stdio' ? McpServerType.Stdio : McpServerType.Standard;
+      const serverUrl = config.get<string>('serverUrl', '');
+      
       if (useLlmParser) {
-        const config = vscode.workspace.getConfiguration('mcpClient');
-        const apiKey = config.get<string>('apiKey', '');
         const llmApiKey = config.get<string>('llmApiKey', '');
         const useMockLlm = config.get<boolean>('useMockLlm', true);
 
@@ -216,6 +249,7 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       const parseResult = await inputParser.parseInput(userInput, useLlmParser);
+      let methodNotFoundTriggered = false; // track MethodNotFound to control messaging
 
       // If LLM was used, add a system message to inform the user
       if (parseResult.wasLlmUsed) {
@@ -228,12 +262,61 @@ export function activate(context: vscode.ExtensionContext) {
             chatView.addMessage('assistant', `Note: Input was parsed using LLM into: ${parseResult.toolCommand}`);
           }
         }
+        } else if (
+          serverType === McpServerType.Standard &&
+          (serverUrl.startsWith('http://') || serverUrl.startsWith('https://'))
+        ) {
+          // Remote Standard (HTTP/HTTPS) servers typically expect Authorization: Bearer <GitHub PAT>
+          if (githubToken) {
+            console.log('Standard HTTP/HTTPS MCP server detected. Using GitHub token as Bearer credential.');
+            apiKey = githubToken;
+          } else if (!apiKey) {
+            // Fall back to asking for a token if no generic API key is set
+            const tokenInput = await vscode.window.showInputBox({
+              prompt: 'A GitHub Personal Access Token is required for remote MCP servers.',
+              placeHolder: 'Enter your GitHub Personal Access Token',
+              password: true
+            });
+
+            if (!tokenInput) {
+              throw new Error('GitHub Personal Access Token is required for remote MCP server');
+            }
+
+            apiKey = tokenInput;
+
+            const saveToken = await vscode.window.showQuickPick(['Yes', 'No'], {
+              placeHolder: 'Do you want to save this token in your settings as mcpClient.githubToken?'
+            });
+
+            if (saveToken === 'Yes') {
+              await config.update('githubToken', tokenInput, true);
+              vscode.window.showInformationMessage('GitHub token saved in settings (mcpClient.githubToken)');
+            }
+          }
+
+          // Validate that the token appears to be a GitHub PAT, not another provider key
+          if (apiKey) {
+            const looksLikeGoogle = /^AIza[0-9A-Za-z_\-]{10,}$/.test(apiKey);
+            const looksLikeOpenAI = /^sk-[0-9A-Za-z]{20,}$/.test(apiKey);
+            const looksLikeGitHubPat = /^(github_pat_|ghp_|gho_|ghu_|ghs_|ghr_)/.test(apiKey);
+
+            if (looksLikeGoogle || looksLikeOpenAI) {
+              console.error('[MCP Connect] Token format looks like a non-GitHub key (Google/OpenAI). A GitHub PAT is required for remote MCP servers.');
+              vscode.window.showErrorMessage('Remote MCP requires a GitHub Personal Access Token (PAT), but a non-GitHub key appears to be configured. Please set "mcpClient.githubToken" to a valid GitHub PAT (starts with "github_pat_" or "ghp_").');
+              throw new Error('Invalid token type for remote MCP server (expected GitHub PAT).');
+            }
+
+            if (!looksLikeGitHubPat) {
+              console.warn('[MCP Connect] Token does not look like a typical GitHub PAT prefix. Continuing, but this may fail with 401.');
+            }
+          }
       }
 
       if (parseResult.toolCommand) {
         // Parse the tool command format: tool:name param1=value1 param2=value2
         const [toolPrefix, ...paramParts] = parseResult.toolCommand.split(' ');
-        const toolName = toolPrefix.substring(5); // Remove 'tool:' prefix
+        // Remove 'tool:' prefix and trim any leading/trailing underscores from the tool name
+        const toolName = toolPrefix.substring(5).replace(/^_+|_+$/g, '');
 
         // Parse parameters from the format param=value
         const params: Record<string, any> = {};
@@ -250,12 +333,43 @@ export function activate(context: vscode.ExtensionContext) {
 
         // Import the toolsHelper dynamically
         const { buildToolCallRequest } = await import('./mcp/jsonRpc');
-        // Send the tool call request
-        response = await mcpClient.sendJsonRpcRequest(
-          buildToolCallRequest(toolName, params)
-        );
+
+        // Helper to detect method-not-found from response or error
+        const isMethodNotFound = (obj: any): boolean => {
+          if (!obj) return false;
+          const msg = (obj.error?.message || obj.error || obj.message || obj.toString?.() || '').toString().toLowerCase();
+          const code = (obj.code || obj.error?.code || '').toString().toLowerCase();
+          return code.includes('methodnotfound') ||
+                 msg.includes('method not found') ||
+                 msg.includes('unknown tool') ||
+                 msg.includes('unknown method') ||
+                 msg.includes('tool not found');
+        };
+
+        // First attempt
+        try {
+          response = await mcpClient.sendJsonRpcRequest(
+            buildToolCallRequest(toolName, params)
+          );
+          // If server returned an error-shaped object
+          if (response && (response.error || response?.content?.error)) {
+            if (isMethodNotFound(response.error || response?.content)) {
+              throw response; // force retry path below
+            }
+          }
+        } catch (firstErr) {
+          // On method not found: Just return a short assistant apology and do NOT retry
+          if (isMethodNotFound(firstErr)) {
+            methodNotFoundTriggered = true;
+            console.warn('[MCP] MethodNotFound detected, returning short assistant apology (no retry, no catalog grounding).');
+            response = { error: { message: 'Sorry, I can’t help with that.' } };
+          } else {
+            // Non-retriable error
+            throw firstErr;
+          }
+        }
       } else {
-        // Regular prompt
+        // Regular prompt path: optionally rewrite via LLM before sending to server
         const editor = vscode.window.activeTextEditor;
         const document = editor?.document;
         let context = "";
@@ -273,12 +387,25 @@ export function activate(context: vscode.ExtensionContext) {
 
         if (useCodeSearch) {
           // TODO: Implement code search across the workspace
-          // This would search for relevant code snippets related to the query
-          // For now, we'll add a system message indicating this feature is coming soon
           chatView.addMessage('system', 'Code search functionality will be available in a future update.');
         }
 
-        response = await mcpClient.executePrompt(userInput, context);
+        let promptToSend = userInput;
+        if (useLlmParser) {
+          try {
+            const rewritten = await PromptRewriter.rewrite(userInput, context);
+            if (rewritten && typeof rewritten === 'string' && rewritten.trim().length > 0) {
+              promptToSend = rewritten.trim();
+              console.log('[PromptRewriter] Using rewritten prompt:', promptToSend.substring(0, 200));
+            }
+          } catch (rewErr) {
+            console.warn('[PromptRewriter] failed, sending raw input. Reason:', (rewErr as any)?.message || String(rewErr));
+          }
+        } else {
+          console.log('[PromptRewriter] Skipped (AI Command Parsing disabled)');
+        }
+
+        response = await mcpClient.executePrompt(promptToSend, context);
       }
 
       // Present the response via LLM into user-friendly HTML
@@ -289,17 +416,118 @@ export function activate(context: vscode.ExtensionContext) {
           toolForPresentation = tp.startsWith('tool:') ? tp.substring(5) : 'generic';
         } catch {}
       }
-      let presentedHtml = await LlmPresenter.present(toolForPresentation, response, userInput);
+      // If the response is an error object, convert it to a readable plain text summary first
+      let effectiveResponse: any = response;
+      if (response && (response.error || response?.content?.error)) {
+        const errObj = response.error || response?.content?.error || response?.content;
+        effectiveResponse = {
+          error: true,
+          message: errObj?.message || errObj || 'Unknown server error',
+          code: errObj?.code
+        };
+      }
 
-      // Add the assistant's response (HTML) to the chat
-      chatView.addMessage('assistant', presentedHtml);
+      // If MethodNotFound occurred and we still have an error, return a short friendly message
+      let presentedText: string;
+      if (methodNotFoundTriggered && effectiveResponse && effectiveResponse.error) {
+        presentedText = "Sorry, I can’t help with that.";
+      } else {
+        presentedText = await LlmPresenter.present(toolForPresentation, effectiveResponse, userInput);
+      }
+
+      // Add the assistant's response (plain text) to the chat
+      chatView.addMessage('assistant', presentedText);
 
       statusBarManager.setProcessing(false);
       chatView.setProcessing(false);
     } catch (error) {
       statusBarManager.setProcessing(false);
       chatView.setProcessing(false);
-      vscode.window.showErrorMessage(`Error: ${error instanceof Error ? error.message : String(error)}`);
+
+      // Build a user-friendly assistant message instead of throwing raw errors
+      let rawMessage: string = '';
+      let statusCode: any = undefined;
+      let details: any = undefined;
+
+      if (error && typeof error === 'object') {
+        const errObj: any = error;
+        statusCode = errObj.status ?? errObj.code;
+        rawMessage =
+          errObj.message ??
+          (errObj.response && errObj.response.statusText) ??
+          (errObj.error && errObj.error.message) ??
+          (error instanceof Error ? error.message : String(error));
+        details = errObj.details ?? errObj.data ?? errObj.response?.data;
+      } else {
+        rawMessage = String(error);
+      }
+
+      const normalized = (rawMessage || '').toLowerCase();
+
+      // Heuristics for common MCP errors
+      const isMethodNotFound =
+        normalized.includes('method not found') || normalized.includes('-32601');
+
+      const isInvalidParams =
+        normalized.includes('invalid params') || normalized.includes('-32602');
+
+      const isAuth =
+        normalized.includes('unauthorized') ||
+        normalized.includes('forbidden') ||
+        normalized.includes('401') ||
+        normalized.includes('403');
+
+      const isRateLimit =
+        normalized.includes('rate limit') || normalized.includes('429');
+
+      const isNotFound =
+        normalized.includes('not found') || normalized.includes('404');
+
+      let friendly = 'I can’t help with that request right now.\n\n';
+
+      friendly += `Server reported: ${rawMessage || 'Unknown error'}${statusCode ? ` (code: ${statusCode})` : ''}.\n\n`;
+
+      friendly += 'Possible causes:\n';
+      if (isMethodNotFound) {
+        friendly += '- The tool name may be incorrect or not supported by the server.\n';
+      }
+      if (isInvalidParams) {
+        friendly += '- One or more parameters are missing or have invalid values.\n';
+      }
+      if (isAuth) {
+        friendly += '- Authentication/authorization failed (token missing or insufficient scopes).\n';
+      }
+      if (isRateLimit) {
+        friendly += '- Rate limits were exceeded.\n';
+      }
+      if (isNotFound) {
+        friendly += '- The requested resource or endpoint was not found.\n';
+      }
+      if (!isMethodNotFound && !isInvalidParams && !isAuth && !isRateLimit && !isNotFound) {
+        friendly += '- Server rejected the request or encountered an internal error.\n';
+      }
+
+      friendly += '\nWhat you can try:\n';
+      friendly += '- Run "List Tools" to see available tool names and parameters.\n';
+      friendly += '- Check your tool command and parameter names/values.\n';
+      friendly += '- Ensure your token is set and has the right permissions.\n';
+      friendly += '- Try again later if you hit a rate limit.\n';
+
+      // Include minimal diagnostics for development
+      if (details) {
+        try {
+          const snippet = JSON.stringify(details);
+          if (snippet && snippet !== '{}') {
+            friendly += '\nDetails (for reference): ';
+            friendly += snippet.length > 500 ? snippet.slice(0, 500) + '…' : snippet;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      // Show friendly message in the chat instead of a backend error
+      chatView.addMessage('assistant', friendly);
     }
   });
 

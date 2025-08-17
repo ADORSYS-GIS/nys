@@ -4,15 +4,16 @@ import { ModelProviderFactory } from '../modelProviders/modelProviderFactory';
 
 /**
  * LLM-based response presenter.
- * Converts arbitrary tool responses to user-friendly HTML (typically a table).
- * Returns HTML only (no surrounding prose).
+ * Converts arbitrary tool responses to user-friendly plain text.
+ * Returns formatted plain text (no HTML).
  */
 export class LlmPresenter {
   /**
-   * Present a tool response as HTML using the configured LLM provider.
+   * Present a tool response as plain text using the configured LLM provider.
    * @param toolName Tool name (snake_case if known), e.g., 'list_issues'
    * @param response Raw response object/string from server
    * @param userPrompt Original user prompt (optional for context)
+   * @returns Formatted plain text representation of the response
    */
   public static async present(toolName: string, response: any, userPrompt?: string): Promise<string> {
     const cfg = vscode.workspace.getConfiguration('mcpClient');
@@ -31,10 +32,8 @@ export class LlmPresenter {
 
     try {
       if (useMock) {
-        // Simple mock table fallback in dev
-        const mock = `<table><thead><tr><th>Preview</th></tr></thead><tbody><tr><td><pre>${LlmPresenter.escape(
-          JSON.stringify(sample, null, 2),
-        )}</pre></td></tr></tbody></table>`;
+        // Simple mock plain text fallback in dev
+        const mock = `Preview:\n\n${JSON.stringify(sample, null, 2)}`;
         return mock;
       }
 
@@ -59,12 +58,12 @@ export class LlmPresenter {
       const resp = await axios.post(provider.getEndpoint(), body, { headers });
       const content = provider.extractContent(resp.data);
       if (!content) {
-        return LlmPresenter.defaultHtmlFallback(sample);
+        return LlmPresenter.defaultTextFallback(sample);
       }
       return LlmPresenter.sanitizeToPlainText(content);
     } catch (err) {
       console.error('LLM Presenter error:', err);
-      return LlmPresenter.defaultHtmlFallback(sample);
+      return LlmPresenter.defaultTextFallback(sample);
     }
   }
 
@@ -84,7 +83,8 @@ Requirements:
 - Prefer stable identifiers (e.g., numbers, titles, dates, statuses) and short links (if any) in plain text.
 - Keep lines short and wrap long text.
 - Do NOT include HTML or tables.
-- If nothing meaningful is present, say "No relevant results."`;
+- If nothing meaningful is present, say "No relevant results."
+- If you have access to a web/search tool and are uncertain about field semantics or tool usage, you MAY consult the official GitHub MCP server repository at https://github.com/github/github-mcp-server for brief clarification. Do not include raw content from the web; return only your concise plain‑text summary. Keep latency low.`;
 
     // Tool-specific hints (optional) to help structure
     if (toolName === 'list_issues') {
@@ -150,16 +150,19 @@ ${sampleStr}`;
     }
   }
 
-  private static defaultHtmlFallback(sample: any): string {
+  private static defaultTextFallback(sample: any): string {
     const asStr =
       typeof sample === 'string' ? sample : JSON.stringify(sample, null, 2);
-    return `<table style="width:100%; border-collapse:collapse;">
-  <thead><tr><th style="text-align:left; padding:8px; border-bottom:1px solid #333;">Preview</th></tr></thead>
-  <tbody><tr><td style="padding:8px;"><pre>${LlmPresenter.escape(asStr)}</pre></td></tr></tbody>
-</table>`;
+    return `Preview:\n\n${asStr}`;
   }
 
-  private static sanitizeHtml(html: string): string {
+  /**
+   * Sanitizes HTML content, allowing only safe tags and attributes.
+   * Used for testing and HTML processing.
+   * @param html The HTML content to sanitize
+   * @returns Sanitized HTML with only allowed tags and attributes
+   */
+  public static sanitizeHtml(html: string): string {
     if (!html || typeof html !== 'string') return '';
 
     // First decode any HTML entities that might be in the content

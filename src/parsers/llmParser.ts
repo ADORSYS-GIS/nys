@@ -29,10 +29,10 @@ export class LlmParser {
   }
 
   /**
-   * Update the list of available tools to improve parsing accuracy
+   * Deprecated: No longer used; LLM is always expected to look up live tool lists via web.
    */
-  public setAvailableTools(tools: any[]) {
-    this.availableTools = tools;
+  public setAvailableTools(_tools: any[]) {
+    // No-op: live web lookup always used.
   }
 
   /**
@@ -258,18 +258,28 @@ export class LlmParser {
       }
     }
 
-    // Full system prompt, now instructs snake_case
-    return `You are a tool command parser. Your job is to convert natural language into structured tool commands.
+    // Full system prompt, explicit: always do live web lookup for tool list, never use hardcoded list or prior memory!
+    return `You are a tool command parser for developer automation.
+Your main job is to convert natural language into structured tool commands, for the GitHub MCP Server (https://github.com/github/github-mcp-server).
 
-${toolsDescription}
+Instructions:
+- ALWAYS use your web/search browsing tool to consult the latest official documentation at https://github.com/github/github-mcp-server for current tool names, usage, and parameters.
+- Never rely on internal memory or prior tool names or parameters; always check the live repository for the most accurate catalog.
+- Use only tool names, parameter formats, value choices, and expected output shapes that precisely match the latest official documentation as found during your live lookup.
+- If the web tool is unavailable or you cannot find the tool information, reply with "NO_TOOL_MATCH" and nothing else.
+- Do not use any supplied tool list from the client; always go to the source.
 
-ALWAYS use snake_case for tool names as defined in the available tools list.
-Analyze the user's input and convert it to a tool command in the format: tool:tool_name param1=value1 param2=value2
+When you process a user request:
+- Analyze the prompt.
+- Use your browsing tool to visit https://github.com/github/github-mcp-server (or its API docs) and find the correct tool and its parameters.
+- Respond ONLY with the structured tool command, in this format:
+  tool:tool_name param1=value1 param2=value2
 
-If the input doesn't clearly specify a tool or parameters, make a best guess based on the context.
-If you cannot determine a suitable tool, respond with "NO_TOOL_MATCH".
+If the input doesn't specify a valid tool/usage you can find, reply with "NO_TOOL_MATCH" and nothing else.
 
-Respond ONLY with the formatted tool command or NO_TOOL_MATCH, nothing else.`;
+Output rules:
+- Output must only be the formatted tool command or NO_TOOL_MATCH, nothing else.
+- Do not include explanations, extra text, or chat summaries.`;
   }
 
   /**
@@ -299,7 +309,12 @@ Respond ONLY with the formatted tool command or NO_TOOL_MATCH, nothing else.`;
     // Check for tool: format
     if (cleaned.startsWith('tool:')) {
       const [toolPrefix, ...paramParts] = cleaned.split(' ');
-      const toolName = toolPrefix.substring(5); // Remove 'tool:' prefix
+      // Remove 'tool:' prefix and sanitize 'github.' or leading/trailing underscores
+      let toolName = toolPrefix.substring(5);
+      if (toolName.startsWith('github.')) {
+        toolName = toolName.substring('github.'.length);
+      }
+      toolName = toolName.replace(/^_+|_+$/g, '');
 
       // Parse parameters
       const params: Record<string, any> = {};

@@ -139,33 +139,31 @@ export class McpClient extends EventEmitter {
         // Set up environment variables including GitHub token and API key
         const env = { ...process.env };
 
-        // For the GitHub MCP server, we need to set GITHUB_PERSONAL_ACCESS_TOKEN
-        // regardless of its format (it doesn't need to start with github_ or ghp_)
-        if (command.includes('github-mcp-server') || command.includes('mcp/github-mcp-server')) {
-          console.log('GitHub MCP server detected, setting GITHUB_PERSONAL_ACCESS_TOKEN');
+        // Always pass token environment variables if available, regardless of binary name or token prefix.
+        if (this.apiKey) {
+          // Primary expected by many GitHub-based MCP servers
+          env['GITHUB_PERSONAL_ACCESS_TOKEN'] = this.apiKey;
 
-          if (this.apiKey) {
-            env['GITHUB_PERSONAL_ACCESS_TOKEN'] = this.apiKey;
-            console.log('Using provided token for GitHub MCP server');
-          } else {
-            console.log('WARNING: No GitHub token provided');
-          }
-        }
-        // For other API-based services
-        else if (this.apiKey) {
-          // Check if it looks like a GitHub token
-          if (this.apiKey.startsWith('github_') || this.apiKey.startsWith('ghp_')) {
-            env['GITHUB_PERSONAL_ACCESS_TOKEN'] = this.apiKey;
-            console.log('Using provided API key as GitHub Personal Access Token');
+          // Common alias some tools accept
+          if (!env['GITHUB_TOKEN']) {
+            env['GITHUB_TOKEN'] = this.apiKey;
           }
 
-          // Always set API_KEY anyway
+          // Generic API key for other servers
           env['API_KEY'] = this.apiKey;
 
-          // Try to get GitHub token from env var if not already set
-          if (!env['GITHUB_PERSONAL_ACCESS_TOKEN'] && process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
+          console.log('Passing token via GITHUB_PERSONAL_ACCESS_TOKEN, GITHUB_TOKEN, and API_KEY');
+        } else {
+          // Fallback: reuse any token already set in the environment
+          if (process.env.GITHUB_PERSONAL_ACCESS_TOKEN && !env['GITHUB_PERSONAL_ACCESS_TOKEN']) {
             env['GITHUB_PERSONAL_ACCESS_TOKEN'] = process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
-            console.log('Using GITHUB_PERSONAL_ACCESS_TOKEN from environment');
+            console.log('Using GITHUB_PERSONAL_ACCESS_TOKEN from existing environment');
+          }
+          if (process.env.GITHUB_TOKEN && !env['GITHUB_TOKEN']) {
+            env['GITHUB_TOKEN'] = process.env.GITHUB_TOKEN;
+          }
+          if (process.env.API_KEY && !env['API_KEY']) {
+            env['API_KEY'] = process.env.API_KEY;
           }
         }
 

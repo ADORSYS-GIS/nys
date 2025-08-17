@@ -30,10 +30,10 @@ export class InputParser {
   }
 
   /**
-   * Parse user input using both LLM and heuristic, post-correcting LLM output if appropriate
+   * Parse user input using either LLM or heuristic parser based on the useLlmParser parameter.
    */
   public async parseInput(input: string, useLlmParser: boolean): Promise<{ toolCommand: string | null, wasLlmUsed: boolean }> {
-    console.log(`Parsing input: "${input}" with combined LLM and heuristic post-processing.`);
+    console.log(`Parsing input: "${input}" with ${useLlmParser ? 'LLM' : 'heuristic parser'}.`);
 
     // Skip parsing if it's already in the correct format
     if (input.startsWith('tool:')) {
@@ -41,57 +41,31 @@ export class InputParser {
       return { toolCommand: input, wasLlmUsed: false };
     }
 
-    // Step 1: Run heuristic parser on user input ("classic" mode)
-    const heuristicResult = this.heuristicParser.parseInput(input);
-    const heuristicConfidence = this.heuristicParser.estimateConfidence(input);
-
-    // If high confidence from heuristics or LLM is disabled, take heuristic directly
-    if (heuristicResult && (heuristicConfidence > 0.6 || !useLlmParser)) {
-      const formatted = `tool:${heuristicResult.name} ${this.formatParams(heuristicResult.params)}`;
-      return { toolCommand: formatted, wasLlmUsed: false };
+    // Try heuristic parser first if LLM parser is not requested
+    if (!useLlmParser) {
+      const heuristicResult = this.heuristicParser.parseInput(input);
+      if (heuristicResult) {
+        const heuristicCommandRaw = `tool:${heuristicResult.name} ${this.formatParams(heuristicResult.params)}`;
+        return { toolCommand: heuristicCommandRaw, wasLlmUsed: false };
+      }
     }
 
-    // Step 2: Otherwise call LLM
+    // Use LLM parser if requested or if heuristic parser failed
     if (useLlmParser) {
       try {
         const llmResult = await this.llmParser.parseInput(input);
-
         if (llmResult) {
           const llmCommandRaw = `tool:${llmResult.name} ${this.formatParams(llmResult.params)}`;
-
-          // Now post-process: run heuristic parser on the LLM output
-          const heuristicPost = this.heuristicParser.parseInput(llmCommandRaw);
-          const heuristicPostConfidence = this.heuristicParser.estimateConfidence(llmCommandRaw);
-
-          // If heuristic parser is at least moderately confident, use/correct its result
-          if (heuristicPost && heuristicPostConfidence >= 0.2) {
-            const corrected = `tool:${heuristicPost.name} ${this.formatParams(heuristicPost.params)}`;
-            if (corrected !== llmCommandRaw) {
-              console.log(`[Combiner] Heuristic postprocessing corrected LLM output to: ${corrected}`);
-            }
-            return { toolCommand: corrected, wasLlmUsed: true }; // true, since LLM parsing was used
-          } else {
-            // If lower than 0.2, use the raw LLM output (likely not in tool list)
-            console.log(`[Combiner] Heuristic postprocessing left LLM output unchanged (confidence ${heuristicPostConfidence})`);
-            return { toolCommand: llmCommandRaw, wasLlmUsed: true };
-          }
+          return { toolCommand: llmCommandRaw, wasLlmUsed: true };
         }
       } catch (err) {
         console.error('LLM parsing failed:', err);
-        // Fallback to heuristic if available
-        if (heuristicResult) {
-          const fallbackHeuristic = `tool:${heuristicResult.name} ${this.formatParams(heuristicResult.params)}`;
-          return { toolCommand: fallbackHeuristic, wasLlmUsed: false };
-        }
+        // Could not parse
       }
-    } else if (heuristicResult) {
-      // If LLM is disabled but have even low confidence result
-      const lowConf = `tool:${heuristicResult.name} ${this.formatParams(heuristicResult.params)}`;
-      return { toolCommand: lowConf, wasLlmUsed: false };
     }
-
+    
     // No match
-    return { toolCommand: null, wasLlmUsed: false };
+    return { toolCommand: null, wasLlmUsed: useLlmParser };
   }
 
   /**
