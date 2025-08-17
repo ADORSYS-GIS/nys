@@ -9,7 +9,7 @@ interface LlmParserOptions {
   maxRetries?: number;
 }
 
-interface ToolCommand {
+export interface ToolCommand {
   name: string;
   params: Record<string, any>;
 }
@@ -37,8 +37,9 @@ export class LlmParser {
 
   /**
    * Parse natural language into a structured tool command using an LLM
+   * @param input The user input to parse
    */
-  public async parseInput(input: string): Promise<ToolCommand | null> {
+  public async parseInput(input: string, context?: any): Promise<ToolCommand | null> {
     // Quick pass - if it's already in the correct format, just return it
     if (input.startsWith('tool:')) {
       const [toolPrefix, ...paramParts] = input.split(' ');
@@ -68,8 +69,8 @@ export class LlmParser {
       throw new Error('LLM API Key not configured. Please set mcpClient.apiKey in settings.');
     }
 
-    // Build the LLM prompt with available tools
-    const prompt = this.buildPrompt();
+    // Build the LLM prompt with context if provided (README/project scope)
+    const prompt = this.buildPrompt(typeof context === 'string' ? context : '');
 
     try {
       // For testing or when no API key is available, use a mock implementation
@@ -84,7 +85,7 @@ export class LlmParser {
       const configuredModel = config.get<string>('modelName', '');
       console.log(`Using ${modelProvider.name} for LLM parsing with model: ${configuredModel || 'default'}`);
 
-      // Create request body based on the provider
+      // Create request body based on the provider, first arg is system prompt with context
       const requestBody = modelProvider.createRequestBody(prompt, input);
       // Log the actual model being used in the request
       if (requestBody.model) {
@@ -230,62 +231,42 @@ export class LlmParser {
   /**
    * Build the prompt for the LLM with available tools
    */
-  private buildPrompt(): string {
-    let toolsDescription = '';
+  private buildPrompt(context: string): string {
+    const extraContext = (typeof context === 'string' && context.trim()) ? context : '[No additional context provided]';
 
-    // Add available tools to the prompt
-    if (this.availableTools.length > 0) {
-      toolsDescription = 'Available tools:\n';
-
-      for (const tool of this.availableTools) {
-        toolsDescription += `- ${tool.name}: ${tool.description || 'No description'}\n`;
-
-        // Add parameters
-        if (tool.parameters && Array.isArray(tool.parameters)) {
-          toolsDescription += '  Parameters:\n';
-
-          for (const param of tool.parameters) {
-            toolsDescription += `  - ${param.name} (${param.type || 'any'})`;
-            if (param.required) {
-              toolsDescription += ' (required)';
-            }
-            if (param.description) {
-              toolsDescription += `: ${param.description}`;
-            }
-            toolsDescription += '\n';
-          }
-        }
-      }
-    }
-
-    // Full system prompt, explicit: always do live web lookup for tool list, never use hardcoded list or prior memory!
     return `You are a tool command parser for developer automation.
 Your main job is to convert natural language into structured tool commands, for the GitHub MCP Server (https://github.com/github/github-mcp-server).
 
+Context (GitHub project README or environment description, may provide repository name, tech stack, deployment intent, etc.):
+${extraContext ? `-----\n${extraContext}\n-----\n` : '[No additional context provided]\n'}
+
 Instructions:
 - ALWAYS use your web/search browsing tool to consult the latest official documentation at https://github.com/github/github-mcp-server for current tool names, usage, and parameters.
+- TOOL NAMES are ALWAYS in snake_case (use underscores between words, do not use dots or camelCase), e.g., use "create_repository" not "createRepository" or "github.create_repository".
+- Example: tool:create_repository owner=someuser name=demo_repo will create a new repository.
+- If the context describes a GitHub repo/project and the user's request is to "spin up" or setup infrastructure, figure out which tools (and in what sequence) would be needed; generate those tool commands one per line, in step-by-step order.
 - Never rely on internal memory or prior tool names or parameters; always check the live repository for the most accurate catalog.
 - Use only tool names, parameter formats, value choices, and expected output shapes that precisely match the latest official documentation as found during your live lookup.
 - If the web tool is unavailable or you cannot find the tool information, reply with "NO_TOOL_MATCH" and nothing else.
 - Do not use any supplied tool list from the client; always go to the source.
 
 When you process a user request:
-- Analyze the prompt.
+- Analyze the prompt (and the context if provided).
 - Use your browsing tool to visit https://github.com/github/github-mcp-server (or its API docs) and find the correct tool and its parameters.
-- Respond ONLY with the structured tool command, in this format:
+- Respond ONLY with the sequence of structured tool commands, in this format, one command per line:
   tool:tool_name param1=value1 param2=value2
 
 If the input doesn't specify a valid tool/usage you can find, reply with "NO_TOOL_MATCH" and nothing else.
 
 Output rules:
-- Output must only be the formatted tool command or NO_TOOL_MATCH, nothing else.
+- Output must only be the formatted tool command(s) (one per line) or NO_TOOL_MATCH, nothing else.
 - Do not include explanations, extra text, or chat summaries.`;
   }
 
   /**
    * Parse the LLM response to extract the tool call
    */
-  private parseToolCallFromLlm(content: string | null): ToolCommand | null {
+  public parseToolCallFromLlm(content: string | null): ToolCommand | null {
     // Handle null or undefined content
     if (!content) {
       console.error('LLM returned null or empty content');

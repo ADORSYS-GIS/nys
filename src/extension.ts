@@ -248,7 +248,28 @@ export function activate(context: vscode.ExtensionContext) {
         }
       }
 
-      const parseResult = await inputParser.parseInput(userInput, useLlmParser);
+      // Gather README context only if context-aware toggle is enabled
+      let context = "";
+      const isContextAware = typeof chatView.isContextAware === 'function' ? chatView.isContextAware() : true;
+
+      if (isContextAware) {
+        const { workspace } = await import('vscode');
+        const wsFolders = workspace.workspaceFolders;
+        let readmeContent = '';
+        if (wsFolders && wsFolders.length > 0) {
+          try {
+            const readmeUri = vscode.Uri.joinPath(wsFolders[0].uri, 'README.md');
+            const arr = await workspace.fs.readFile(readmeUri);
+            readmeContent = Buffer.from(arr).toString('utf8').slice(0, 8000); // max 8KB
+            console.log(`[Context] Read ${readmeContent.length} chars from project README.md`);
+          } catch (err) {
+            console.warn('[Context] Could not read README.md:', (err as any)?.message || String(err));
+          }
+        }
+        context = readmeContent;
+      }
+
+      const parseResult = await inputParser.parseInput(userInput, context);
       let methodNotFoundTriggered = false; // track MethodNotFound to control messaging
 
       // If LLM was used, add a system message to inform the user
@@ -313,22 +334,51 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       if (parseResult.toolCommand) {
-        // Parse the tool command format: tool:name param1=value1 param2=value2
-        const [toolPrefix, ...paramParts] = parseResult.toolCommand.split(' ');
-        // Remove 'tool:' prefix and trim any leading/trailing underscores from the tool name
-        const toolName = toolPrefix.substring(5).replace(/^_+|_+$/g, '');
-
-        // Parse parameters from the format param=value
-        const params: Record<string, any> = {};
-        for (const part of paramParts) {
-          const [key, value] = part.split('=');
-          if (key && value) {
-            // Try to convert numbers and booleans
-            if (value === 'true') params[key] = true;
-            else if (value === 'false') params[key] = false;
-            else if (!isNaN(Number(value))) params[key] = Number(value);
-            else params[key] = value;
+        // Multi-command: parse all tool commands up front
+        // Note: parseToolCallFromLlm now returns ToolCommand[]
+        let commands: ToolCommand[] = [];
+        try {
+          // Try to split multiple commands (if parseResult.toolCommand holds them as lines)
+          const parseToolCallFromLlm = inputParser['parseToolCallFromLlm']?.bind(inputParser);
+          if (typeof parseToolCallFromLlm === 'function') {
+            const multiCmds = parseToolCallFromLlm(parseResult.toolCommand);
+            if (Array.isArray(multiCmds) && multiCmds.length > 0) {
+              commands = multiCmds;
+            }
           }
+          // Fallback: treat as single command if the above fails
+          if (commands.length === 0) {
+            const [toolPrefix, ...paramParts] = parseResult.toolCommand.split(' ');
+            let toolName = toolPrefix.substring(5).replace(/^_+|_+$/g, '');
+            if (toolName.startsWith('github.')) toolName = toolName.substring('github.'.length);
+            const params: Record<string, any> = {};
+            for (const part of paramParts) {
+              const [key, value] = part.split('=');
+              if (key && value) {
+                if (value === 'true') params[key] = true;
+                else if (value === 'false') params[key] = false;
+                else if (!isNaN(Number(value))) params[key] = Number(value);
+                else params[key] = value;
+              }
+            }
+            commands = [{ name: toolName, params }];
+          }
+        } catch {
+          // Defensive fallback: treat as single command split by space
+          const [toolPrefix, ...paramParts] = parseResult.toolCommand.split(' ');
+          let toolName = toolPrefix.substring(5).replace(/^_+|_+$/g, '');
+          if (toolName.startsWith('github.')) toolName = toolName.substring('github.'.length);
+          const params: Record<string, any> = {};
+          for (const part of paramParts) {
+            const [key, value] = part.split('=');
+            if (key && value) {
+              if (value === 'true') params[key] = true;
+              else if (value === 'false') params[key] = false;
+              else if (!isNaN(Number(value))) params[key] = Number(value);
+              else params[key] = value;
+            }
+          }
+          commands = [{ name: toolName, params }];
         }
 
         // Import the toolsHelper dynamically
@@ -346,66 +396,40 @@ export function activate(context: vscode.ExtensionContext) {
                  msg.includes('tool not found');
         };
 
-        // First attempt
-        try {
-          response = await mcpClient.sendJsonRpcRequest(
-            buildToolCallRequest(toolName, params)
-          );
-          // If server returned an error-shaped object
-          if (response && (response.error || response?.content?.error)) {
-            if (isMethodNotFound(response.error || response?.content)) {
-              throw response; // force retry path below
+        // Sequentially execute commands, abort on failure
+        let commandError: any = null;
+        let lastResponse: any = undefined;
+        for (let i = 0; i < commands.length; ++i) {
+          const cmd = commands[i];
+          try {
+            lastResponse = await mcpClient.sendJsonRpcRequest(
+              buildToolCallRequest(cmd.name, cmd.params)
+            );
+            if (lastResponse && (lastResponse.error || lastResponse?.content?.error)) {
+              if (isMethodNotFound(lastResponse.error || lastResponse?.content)) {
+                throw lastResponse;
+              }
+              // Other errors: stop
+              commandError = lastResponse;
+              break;
             }
+          } catch (cmdErr) {
+            commandError = cmdErr;
+            break;
           }
-        } catch (firstErr) {
-          // On method not found: Just return a short assistant apology and do NOT retry
-          if (isMethodNotFound(firstErr)) {
-            methodNotFoundTriggered = true;
-            console.warn('[MCP] MethodNotFound detected, returning short assistant apology (no retry, no catalog grounding).');
-            response = { error: { message: 'Sorry, I can’t help with that.' } };
-          } else {
-            // Non-retriable error
-            throw firstErr;
-          }
+        }
+        if (commandError) {
+          // Present friendly error on failure of any step, abort further execution
+          response = { error: { message: 'Sorry, an error occurred while executing your command(s). Please check the tool name/parameters and try again.' } };
+        } else {
+          response = lastResponse;
         }
       } else {
-        // Regular prompt path: optionally rewrite via LLM before sending to server
-        const editor = vscode.window.activeTextEditor;
-        const document = editor?.document;
-        let context = "";
-
-        // Check if context-aware mode is enabled
-        const isContextAware = typeof chatView.isContextAware === 'function' ? chatView.isContextAware() : true;
-
-        if (isContextAware && editor && document) {
-          // Get current file contents for natural context
-          context = document.getText();
-        }
-
-        // Check if code search is enabled
-        const useCodeSearch = typeof chatView.isCodeSearchEnabled === 'function' ? chatView.isCodeSearchEnabled() : false;
-
-        if (useCodeSearch) {
-          // TODO: Implement code search across the workspace
-          chatView.addMessage('system', 'Code search functionality will be available in a future update.');
-        }
-
-        let promptToSend = userInput;
-        if (useLlmParser) {
-          try {
-            const rewritten = await PromptRewriter.rewrite(userInput, context);
-            if (rewritten && typeof rewritten === 'string' && rewritten.trim().length > 0) {
-              promptToSend = rewritten.trim();
-              console.log('[PromptRewriter] Using rewritten prompt:', promptToSend.substring(0, 200));
-            }
-          } catch (rewErr) {
-            console.warn('[PromptRewriter] failed, sending raw input. Reason:', (rewErr as any)?.message || String(rewErr));
-          }
-        } else {
-          console.log('[PromptRewriter] Skipped (AI Command Parsing disabled)');
-        }
-
-        response = await mcpClient.executePrompt(promptToSend, context);
+        // If no tool command parsed by LLM, show friendly assistant message and do NOT send prompt/context to the MCP server.
+        chatView.addMessage('assistant', 'Sorry, I could not generate actionable tool commands for your request. Please rephrase or try a more specific instruction.');
+        statusBarManager.setProcessing(false);
+        chatView.setProcessing(false);
+        return;
       }
 
       // Present the response via LLM into user-friendly HTML

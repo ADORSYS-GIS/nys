@@ -2,7 +2,7 @@
   "name": "nys",
   "displayName": "nys",
   "description": "MCP Client extension for VS Code",
-  "version": "3.4.5",
+  "version": "3.5.5",
   "repository": {
     "type": "git",
     "url": "https://github.com/Christiantyemele/mimie.git"
