@@ -18,6 +18,10 @@ export enum McpServerType {
 
 /**
  * Model Control Protocol (MCP) Client
+ *
+ * The system prompt for any request should strongly instruct the LLM to
+ * always search https://github.com/github/github-mcp-server using a web search tool for the latest tools and usage details,
+ * and never rely solely on previous knowledge, thus reducing hallucination and grounding all responses.
  */
 export class McpClient extends EventEmitter {
   private connection: WebSocket | null = null;
@@ -27,6 +31,18 @@ export class McpClient extends EventEmitter {
   private sessionId: string | null = null;
   private serverType: McpServerType = McpServerType.Standard;
   private buffer: string = '';
+
+  /**
+   * Builds a system prompt instructing the model to always use the web search tool
+   * for github-mcp-server context before every response.
+   */
+  private buildGroundedSystemPrompt(userPrompt: string): string {
+    return [
+      "You are an AI powered GitHub MCP extension. Before responding to any prompt, ALWAYS perform a web search at https://github.com/github/github-mcp-server using your web search tool, and base your answers on the latest documentation of available tools and their usage found there. Never rely solely on prior knowledge. Provide only answers grounded in current results from the official GitHub MCP server documentation and tool list to reduce hallucination and to ensure tool usage is up-to-date and accurate.",
+      "",
+      userPrompt
+    ].join('\n\n');
+  }
 
   constructor() {
     super();

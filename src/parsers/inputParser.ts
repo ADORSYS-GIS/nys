@@ -79,7 +79,7 @@ export class InputParser {
 
     for (const line of lines) {
       const result = this.llmParser.parseToolCallFromLlm(line);
-      if (result) {
+      if (result !== null) {
         commands.push(result);
       }
     }

@@ -39,8 +39,8 @@ export class LlmParser {
    * Parse natural language into a structured tool command using an LLM
    * @param input The user input to parse
    */
-  public async parseInput(input: string, context?: any): Promise<ToolCommand | null> {
-    // Quick pass - if it's already in the correct format, just return it
+  public async parseInput(input: string, context?: any): Promise<ToolCommand[] | string> {
+    // Quick pass - if it's already in the correct format, just return it as an array
     if (input.startsWith('tool:')) {
       const [toolPrefix, ...paramParts] = input.split(' ');
       const toolName = toolPrefix.substring(5); // Remove 'tool:' prefix
@@ -57,15 +57,15 @@ export class LlmParser {
           else params[key] = value;
         }
       }
-      return { name: toolName, params };
+      // Wrap in array for consistency
+      return [{ name: toolName, params }];
     }
 
     // Check if we have the API key
     const config = vscode.workspace.getConfiguration('mcpClient');
     const apiKey = this.options.apiKey || config.get<string>('apiKey', '') || config.get<string>('llmApiKey', '');
-    const useMockLlm = config.get<boolean>('useMockLlm', true); // Default to mock for testing
 
-    if (!apiKey && !useMockLlm) {
+    if (!apiKey) {
       throw new Error('LLM API Key not configured. Please set mcpClient.apiKey in settings.');
     }
 
@@ -73,12 +73,7 @@ export class LlmParser {
     const prompt = this.buildPrompt(typeof context === 'string' ? context : '');
 
     try {
-      // For testing or when no API key is available, use a mock implementation
-      if (useMockLlm) {
-        console.log('Using mock LLM implementation');
-        return this.mockLlmParse(input);
-      }
-
+      // Only real LLM calls from here
       // Get the appropriate model provider based on configuration
       const modelProvider = ModelProviderFactory.getProvider();
       // Get current model name from configuration
@@ -112,11 +107,13 @@ export class LlmParser {
           const content = modelProvider.extractContent(response);
           if (!content) {
             console.warn('No content extracted from Anthropic SDK response');
-            return null;
+            return "NO_TOOL_MATCH";
           }
 
           console.log('Extracted content from Anthropic SDK response:', content.substring(0, 100) + '...');
-          return this.parseToolCallFromLlm(content);
+          const parsed = this.parseToolCallFromLlm(content);
+          if (parsed === null) return "NO_TOOL_MATCH";
+          return [parsed];
         } catch (sdkError) {
           console.error('Error using Anthropic SDK:', sdkError);
           // Fall through to standard HTTP request as fallback
@@ -144,13 +141,44 @@ export class LlmParser {
       // Log content extraction result
       if (!content) {
         console.warn('No content extracted from API response');
-        return null;
+        return "NO_TOOL_MATCH";
       }
 
       console.log('Extracted content from API response:', content.substring(0, 100) + '...');
 
-      // Extract the tool call
-      return this.parseToolCallFromLlm(content);
+      // Extract the tool call(s): handle multi-line, NO_TOOL_MATCH, or a single tool
+      // If empty/invalid, return NO_TOOL_MATCH as string
+      if (typeof content === 'string') {
+        const normalized = content.trim();
+        if (!normalized) {
+          return "NO_TOOL_MATCH";
+        }
+        if (normalized === 'NO_TOOL_MATCH') {
+          return "NO_TOOL_MATCH";
+        }
+        // Support multi-command LLM responses (one per line)
+        const lines = normalized.split('\n').map(l => l.trim()).filter(Boolean);
+        const toolCommands: ToolCommand[] = [];
+        for (const line of lines) {
+          const toolObj = this.parseToolCallFromLlm(line);
+          if (toolObj !== null) toolCommands.push(toolObj);
+        }
+        if (toolCommands.length > 0) {
+          return toolCommands;
+        }
+        // If nothing parsed, propagate raw text as reason
+        return "NO_TOOL_MATCH";
+      }
+      // If LLM returned a tool object directly (should not happen, but for compatibility)
+      if (typeof content === 'object' && content !== null) {
+        if (Array.isArray(content)) {
+          return content as ToolCommand[];
+        } else {
+          return [content as ToolCommand];
+        }
+      }
+      // If nothing at all, return "NO_TOOL_MATCH" string
+      return "NO_TOOL_MATCH";
     } catch (error) {
       console.error('Error calling LLM API:', error);
 
@@ -168,9 +196,6 @@ export class LlmParser {
         }
       }
 
-      // Try the mock as a fallback
-      console.log('Falling back to mock LLM implementation after API error');
-
       // Import error handler dynamically to avoid circular dependencies
       const errorHandler = await import('../modelProviders/handleApiError');
       const errorMessage = errorHandler.handleApiError(error);
@@ -178,55 +203,11 @@ export class LlmParser {
       // Log detailed error information
       console.error(`LLM API error details: ${errorMessage}`);
 
-      // Try mock implementation as fallback
-      try {
-        return this.mockLlmParse(input);
-      } catch (mockError) {
-        throw new Error(`Failed to parse input using LLM: ${errorMessage}`);
-      }
+      throw new Error(`Failed to parse input using LLM: ${errorMessage}`);
     }
   }
 
-  /**
-   * Mock LLM implementation for testing or when API key is not available
-   */
-  private mockLlmParse(input: string): ToolCommand | null {
-    const normalizedInput = input.toLowerCase().trim();
-
-    // Check for GitHub specific patterns
-    if (normalizedInput.includes('list issues')) {
-      // Extract owner and repo
-      const ownerMatch = input.match(/(?:owned by|from|by|owner)\s+([\w.-]+)/i);
-      const repoMatch = input.match(/(?:repository|repo|in)\s+([\w.-]+)/i);
-
-      // If we found both owner and repo, create a tool command
-      if (ownerMatch && repoMatch) {
-        return {
-          name: 'list_issues',
-          params: {
-            owner: ownerMatch[1],
-            repo: repoMatch[1],
-            state: 'open'
-          }
-        };
-      }
-
-      // Handle specific case from the user's example
-      if (normalizedInput.includes('github_mcp_server') && normalizedInput.includes('github')) {
-        return {
-          name: 'list_issues',
-          params: {
-            owner: 'github',
-            repo: 'github_mcp_server',
-            state: 'open'
-          }
-        };
-      }
-    }
-
-    // No match found
-    return null;
-  }
+  // (Mock implementation removed)
 
   /**
    * Build the prompt for the LLM with available tools
