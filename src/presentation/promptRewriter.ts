@@ -1,6 +1,7 @@
 import axios from 'axios';
 import * as vscode from 'vscode';
 import { ModelProviderFactory } from '../modelProviders/modelProviderFactory';
+import { getMergedConfig, hasExternalOverride } from '../config/configLoader';
 
 export class PromptRewriter {
   /**
@@ -9,11 +10,12 @@ export class PromptRewriter {
    */
   public static async rewrite(userInput: string, context?: string): Promise<string> {
     try {
-      const cfg = vscode.workspace.getConfiguration('mcpClient');
-      const apiKey =
-        cfg.get<string>('apiKey', '') ||
-        cfg.get<string>('llmApiKey', '');
-      const useMock = cfg.get<boolean>('useMockLlm', false);
+      const settingsCfg = !hasExternalOverride() ? vscode.workspace.getConfiguration('mcpClient') : undefined;
+      const merged = (getMergedConfig('mcpClient') || {}) as any;
+      const apiKey = (merged.apiKey as string) || (merged.llmApiKey as string)
+        || (settingsCfg ? settingsCfg.get<string>('apiKey', '') : '')
+        || (settingsCfg ? settingsCfg.get<string>('llmApiKey', '') : '');
+      const useMock = (typeof merged.useMockLlm === 'boolean') ? !!merged.useMockLlm : (settingsCfg ? settingsCfg.get<boolean>('useMockLlm', false) : false);
 
       const provider = ModelProviderFactory.getProvider();
 

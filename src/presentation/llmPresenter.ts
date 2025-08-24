@@ -1,6 +1,7 @@
 import axios from 'axios';
 import * as vscode from 'vscode';
 import { ModelProviderFactory } from '../modelProviders/modelProviderFactory';
+import { getMergedConfig, hasExternalOverride } from '../config/configLoader';
 
 /**
  * LLM-based response presenter.
@@ -16,12 +17,13 @@ export class LlmPresenter {
    * @returns Formatted plain text representation of the response
    */
   public static async present(toolName: string, response: any, userPrompt?: string): Promise<string> {
-    const cfg = vscode.workspace.getConfiguration('mcpClient');
-    const apiKey =
-      cfg.get<string>('apiKey', '') ||
-      cfg.get<string>('llmApiKey', '');
+    const settingsCfg = !hasExternalOverride() ? vscode.workspace.getConfiguration('mcpClient') : undefined;
+    const merged = (getMergedConfig('mcpClient') || {}) as any;
+    const apiKey = (merged.apiKey as string) || (merged.llmApiKey as string)
+      || (settingsCfg ? settingsCfg.get<string>('apiKey', '') : '')
+      || (settingsCfg ? settingsCfg.get<string>('llmApiKey', '') : '');
 
-    const useMock = cfg.get<boolean>('useMockLlm', false);
+    const useMock = (typeof merged.useMockLlm === 'boolean') ? !!merged.useMockLlm : (settingsCfg ? settingsCfg.get<boolean>('useMockLlm', false) : false);
     const provider = ModelProviderFactory.getProvider();
 
     // Prepare JSON sample (truncate to avoid huge payloads)

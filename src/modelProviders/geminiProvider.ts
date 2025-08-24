@@ -84,9 +84,10 @@ export class GeminiProvider extends BaseModelProvider {
     // Initialize the Gemini client
     this.client = new GoogleGenerativeAI(apiKey);
 
-    // Still return headers for compatibility with the interface
+    // Use header-based API key to avoid exposing the key in the URL
     return {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey
     };
   }
 
@@ -97,6 +98,7 @@ export class GeminiProvider extends BaseModelProvider {
   getEndpoint(): string {
     const baseEndpoint = super.getEndpoint();
     const endpointWithModel = `${baseEndpoint}/${this.modelName}:generateContent`;
-    return `${endpointWithModel}?key=${this.apiKey}`;
+    // Do not append the API key to the URL; rely on headers instead.
+    return endpointWithModel;
   }
 }

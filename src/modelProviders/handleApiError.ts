@@ -19,7 +19,7 @@ export function handleApiError(error: any): string {
     switch (status) {
       case 401:
         // Authentication error
-        return `Authentication failed (${status}): Please check your API key in the settings.`;
+        return `Authentication failed (${status}): Please check your API key in the settings. For GitHub MCP servers (e.g., api.githubcopilot.com/mcp), provide a GitHub token via the Authorization header.`;
 
       case 403:
         // Authorization error

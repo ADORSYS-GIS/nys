@@ -2,6 +2,7 @@
 
 import * as vscode from 'vscode';
 import {McpClient, McpServerType} from './mcp/mcpClient';
+import { getMergedConfig, hasExternalOverride } from './config/configLoader';
 import {StatusBarManager} from './statusBar';
 
 let mcpClient: McpClient;
@@ -9,12 +10,13 @@ let statusBarManager: StatusBarManager;
 
 export function activate(context: vscode.ExtensionContext) {
   // Log extension configuration for debugging
-  const config = vscode.workspace.getConfiguration('mcpClient');
+  const settings = vscode.workspace.getConfiguration('mcpClient');
+  const mergedBoot = (getMergedConfig('mcpClient') || {}) as any;
   console.log('Extension activated with configuration:', {
-    modelProvider: config.get('modelProvider'),
-    modelName: config.get('modelName'),
-    serverType: config.get('serverType'),
-    serverUrl: config.get('serverUrl')
+    modelProvider: mergedBoot.modelProvider ?? settings.get('modelProvider'),
+    modelName: mergedBoot.modelName ?? settings.get('modelName'),
+    serverType: mergedBoot.serverType ?? settings.get('serverType'),
+    serverUrl: mergedBoot.serverUrl ?? settings.get('serverUrl')
   });
 
   console.log('Activating MCP Client extension');
@@ -29,13 +31,14 @@ export function activate(context: vscode.ExtensionContext) {
   let connectCommand = vscode.commands.registerCommand('vscode-mcp-client.connect', async () => {
     try {
       const config = vscode.workspace.getConfiguration('mcpClient');
-      const serverUrl = config.get<string>('serverUrl');
-      let apiKey = config.get<string>('apiKey', '');
-      const githubToken = config.get<string>('githubToken', '');
-      const serverTypeString = config.get<string>('serverType', 'stdio');
+      const merged = (getMergedConfig('mcpClient') || {}) as any;
+      const serverUrl = String(merged.serverUrl || '');
+      let apiKey = String(merged.apiKey || '');
+      const githubToken = String(merged.githubToken || '');
+      const serverTypeString = String(merged.serverType || 'stdio');
       const serverType = serverTypeString === 'stdio' ? McpServerType.Stdio : McpServerType.Standard;
-      const modelProvider = config.get<string>('modelProvider', 'openai');
-      const modelName = config.get<string>('modelName', '');
+      const modelProvider = String(merged.modelProvider || 'openai');
+      const modelName = String(merged.modelName || '');
 
       console.log(`Connecting to MCP server: ${serverUrl}`);
       console.log(`Server type: ${serverTypeString}`);
@@ -49,14 +52,23 @@ export function activate(context: vscode.ExtensionContext) {
       // Prefer GitHub token automatically in stdio mode (common for GitHub MCP binaries),
       // regardless of the server path string.
       if (serverType === McpServerType.Stdio && githubToken) {
-        console.log('Stdio mode: using GitHub token from settings');
+        console.log('Stdio mode: using GitHub token from configuration');
         apiKey = githubToken;
       }
 
       // Back-compat: also detect explicit github-mcp-server in path
       if ((serverUrl.includes('github-mcp-server') || serverUrl.includes('mcp/github-mcp-server')) && githubToken) {
-        console.log('GitHub MCP server detected in path: using GitHub token from settings');
+        console.log('GitHub MCP server detected in path: using GitHub token from configuration');
         apiKey = githubToken;
+      }
+
+      // Prefer GitHub token for GitHub Copilot MCP over HTTP(S)
+      if (serverType === McpServerType.Standard && githubToken) {
+        const urlLower = serverUrl.toLowerCase();
+        if (urlLower.includes('githubcopilot.com') || urlLower.endsWith('/mcp') || urlLower.includes('/mcp/')) {
+          console.log('Standard mode with Copilot MCP URL: using GitHub token from configuration for Authorization header');
+          apiKey = githubToken;
+        }
       }
 
       // If still no key, prompt in stdio mode; otherwise require API key configured
@@ -92,7 +104,8 @@ export function activate(context: vscode.ExtensionContext) {
         const isHttp = serverType === McpServerType.Standard && (serverUrl.startsWith('http://') || serverUrl.startsWith('https://'));
         const maskedToken = apiKey ? `${apiKey.substring(0, 4)}...${apiKey.slice(-4)}` : '(none)';
         console.log(`[MCP Connect] serverType=${serverTypeString} url=${serverUrl} isHttp=${isHttp}`);
-        console.log(`[MCP Connect] tokenSource=${githubToken ? 'githubToken' : 'apiKey'} token(masked)=${maskedToken}`);
+        const tokenSourceLabel = (githubToken && apiKey === githubToken) ? 'githubToken' : 'apiKey';
+        console.log(`[MCP Connect] tokenSource=${tokenSourceLabel} token(masked)=${maskedToken}`);
         if (isHttp && apiKey) {
           const authHeader = `Bearer ${apiKey}`;
           const maskedHeader = `Bearer ${apiKey.substring(0, 4)}...${apiKey.slice(-4)}`;
@@ -232,16 +245,17 @@ export function activate(context: vscode.ExtensionContext) {
       const useLlmParser = typeof chatView.isUsingLlmParser === 'function' ? chatView.isUsingLlmParser() : false;
 
       // If LLM parser is enabled, ensure we have an API key
-      const config = vscode.workspace.getConfiguration('mcpClient');
-      let apiKey = config.get<string>('apiKey', '');
-      const githubToken = config.get<string>('githubToken', '');
-      const serverTypeString = config.get<string>('serverType', 'stdio');
+      const mergedCfg = (getMergedConfig('mcpClient') || {}) as any;
+      let apiKey = (mergedCfg.apiKey as string) || '';
+      const githubToken = (mergedCfg.githubToken as string) || '';
+      const serverTypeString = (mergedCfg.serverType as string) || 'stdio';
       const serverType = serverTypeString === 'stdio' ? McpServerType.Stdio : McpServerType.Standard;
-      const serverUrl = config.get<string>('serverUrl', '');
+      const serverUrl = (mergedCfg.serverUrl as string) || '';
       
       if (useLlmParser) {
-        const llmApiKey = config.get<string>('llmApiKey', '');
-        const useMockLlm = config.get<boolean>('useMockLlm', true);
+        const settingsCfg = !hasExternalOverride() ? vscode.workspace.getConfiguration('mcpClient') : undefined;
+        const llmApiKey = (mergedCfg.llmApiKey as string) || (settingsCfg ? settingsCfg.get<string>('llmApiKey', '') : '');
+        const useMockLlm = (typeof mergedCfg.useMockLlm === 'boolean') ? !!mergedCfg.useMockLlm : (settingsCfg ? settingsCfg.get<boolean>('useMockLlm', true) : true);
 
         if (!apiKey && !llmApiKey && !useMockLlm) {
           vscode.window.showWarningMessage('LLM parsing is enabled but no API key is configured. Using mock parser instead.');
@@ -310,7 +324,8 @@ export function activate(context: vscode.ExtensionContext) {
             });
 
             if (saveToken === 'Yes') {
-              await config.update('githubToken', tokenInput, true);
+              const settingsToUpdate = vscode.workspace.getConfiguration('mcpClient');
+              await settingsToUpdate.update('githubToken', tokenInput, true);
               vscode.window.showInformationMessage('GitHub token saved in settings (mcpClient.githubToken)');
             }
           }

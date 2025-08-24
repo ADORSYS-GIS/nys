@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { getMergedConfig } from './config/configLoader';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -166,8 +167,9 @@ export class EnhancedChatView {
     let showSystemMessages = false;
     
     try {
-      showRawAssistant = vscode.workspace.getConfiguration('mcpClient').get('showRawAssistantResponse', false);
-      showSystemMessages = vscode.workspace.getConfiguration('mcpClient').get('showSystemMessages', false);
+      const merged = (getMergedConfig('mcpClient') || {}) as any;
+      showRawAssistant = !!merged.showRawAssistantResponse;
+      showSystemMessages = !!merged.showSystemMessages;
     } catch {}
 
     // Process messages
@@ -400,8 +402,9 @@ export class EnhancedChatView {
 
             .user-message {
                 align-self: flex-end;
-                background-color: var(--vscode-activityBarBadge-background);
-                color: var(--vscode-activityBarBadge-foreground);
+                background-color: var(--vscode-editorWidget-background);
+                border: 1px solid var(--vscode-panel-border);
+                color: var(--vscode-foreground);
                 margin-left: auto;
             }
 
