@@ -220,8 +220,9 @@ export class ChatView {
 
             .user-message {
                 align-self: flex-end;
-                background-color: var(--vscode-activityBarBadge-background);
-                color: var(--vscode-activityBarBadge-foreground);
+                background-color: var(--vscode-editorWidget-background);
+                border: 1px solid var(--vscode-panel-border);
+                color: var(--vscode-foreground);
                 margin-left: auto;
             }
 

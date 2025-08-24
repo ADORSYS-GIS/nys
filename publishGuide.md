@@ -133,3 +133,34 @@ npx ovsx publish -p <open-vsx-pat>
 3. Keep your README.md updated with the latest information
 4. Add a proper icon to make your extension more discoverable
 5. Specify meaningful tags in package.json
+
+## Known Environment Issue: Undici and Node 18
+
+If you see an error like:
+
+```
+ReferenceError: File is not defined
+ at .../node_modules/undici/lib/web/webidl/index.js
+```
+
+Cause:
+- Some tooling (including vsce and OpenAI SDK) pulls in undici v6+, which expects a global File implementation that is present in Node 20 but not reliably available in Node 18.
+
+Fix in this repo:
+- package.json includes an npm "overrides" entry that forces undici to a Node 18–compatible 5.x release.
+
+What you need to do:
+- Run a clean install so the override takes effect:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install
+```
+
+Alternative options:
+- Use Node 20+ when running packaging tools; or
+- Package with no dependency checks:
+
+```bash
+npx vsce package --no-dependencies
+```

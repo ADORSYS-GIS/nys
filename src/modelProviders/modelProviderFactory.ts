@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { getMergedConfig, hasExternalOverride } from '../config/configLoader';
 import { ModelProviderInterface } from './modelProviderInterface';
 import { OpenAiProvider } from './openAiProvider';
 import { AnthropicProvider } from './anthropicProvider';
@@ -12,9 +13,10 @@ export class ModelProviderFactory {
    * Get the configured model provider
    */
   static getProvider(): ModelProviderInterface {
-    const config = vscode.workspace.getConfiguration('mcpClient');
-    const providerName = config.get<string>('modelProvider', 'openai');
-    const modelName = config.get<string>('modelName', '');
+    const merged = (getMergedConfig('mcpClient') || {}) as any;
+    const settings = !hasExternalOverride() ? vscode.workspace.getConfiguration('mcpClient') : undefined;
+    const providerName = String(merged.modelProvider ?? (settings ? settings.get<string>('modelProvider', 'openai') : 'openai'));
+    const modelName = String(merged.modelName ?? (settings ? settings.get<string>('modelName', '') : ''));
 
     // Create provider based on configuration
     switch (providerName.toLowerCase()) {

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { getMergedConfig } from './config/configLoader';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -161,9 +162,25 @@ export class EnhancedChatView {
    * Get the HTML content for the webview
    */
   private getWebviewContent(): string {
-    const messagesHtml = this.messages.map(message => {
+    // Get configuration
+    let showRawAssistant = false;
+    let showSystemMessages = false;
+    
+    try {
+      const merged = (getMergedConfig('mcpClient') || {}) as any;
+      showRawAssistant = !!merged.showRawAssistantResponse;
+      showSystemMessages = !!merged.showSystemMessages;
+    } catch {}
+
+    // Process messages
+    const enhancedMessagesHtml = this.messages.map(message => {
       const isUser = message.role === 'user';
       const isSystem = message.role === 'system';
+
+      // Hide system messages unless explicitly enabled
+      if (isSystem && !showSystemMessages) {
+        return '';
+      }
 
       if (isSystem) {
         return `
@@ -174,6 +191,18 @@ export class EnhancedChatView {
         `;
       }
 
+      // Assistant: presenter returns finalized PLAIN TEXT; render through formatter (escapes HTML)
+      if (message.role === 'assistant' && !showRawAssistant) {
+        const text = typeof message.content === 'string' ? message.content : String(message.content ?? '');
+        return `
+          <div class="message assistant-message">
+            <div class="message-header">Assistant</div>
+            <div class="message-content">${this.formatMessageContent(text)}</div>
+          </div>
+        `;
+      }
+
+      // Default (user or assistant raw)
       return `
         <div class="message ${isUser ? 'user-message' : 'assistant-message'}">
           <div class="message-header">${isUser ? 'You' : 'Assistant'}</div>
@@ -210,6 +239,29 @@ export class EnhancedChatView {
                 flex: 1;
                 overflow-y: auto;
                 padding: 16px;
+                padding-bottom: 220px; /* reserve space so long tables don't overlap the input area */
+                box-sizing: border-box;
+                scroll-behavior: smooth;
+            }
+
+            /* Make assistant tables responsive and prevent horizontal overflow */
+            .assistant-message {
+                max-width: 100%;
+            }
+
+            .assistant-message .message-content {
+                overflow-x: auto; /* allow horizontal scroll if table is wider */
+            }
+
+            .assistant-message .message-content table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            .assistant-message .message-content th,
+            .assistant-message .message-content td {
+                white-space: normal;
+                word-break: break-word;
             }
 
             .input-container {
@@ -312,7 +364,7 @@ export class EnhancedChatView {
                 padding: 8px 12px;
                 border-radius: 4px;
                 border: 1px solid var(--vscode-input-border);
-                background-color: var(--vscode-input-background);
+                background-color: #282828; /* VS Code gray/dark gray */
                 color: var(--vscode-input-foreground);
                 font-family: var(--vscode-font-family);
                 resize: none;
@@ -350,8 +402,9 @@ export class EnhancedChatView {
 
             .user-message {
                 align-self: flex-end;
-                background-color: var(--vscode-activityBarBadge-background);
-                color: var(--vscode-activityBarBadge-foreground);
+                background-color: var(--vscode-editorWidget-background);
+                border: 1px solid var(--vscode-panel-border);
+                color: var(--vscode-foreground);
                 margin-left: auto;
             }
 
@@ -456,7 +509,7 @@ export class EnhancedChatView {
     <body>
         <div class="chat-container">
             <div class="messages-container" id="messages">
-                ${messagesHtml || '<div class="welcome-message">Welcome to MCP AI Chat! Configure your preferences below and ask anything about your code...</div>'}
+                ${enhancedMessagesHtml || '<div class="welcome-message">Welcome to MCP AI Chat! Configure your preferences below and ask anything about your code...</div>'}
             </div>
             <div class="input-container">
                 <div class="toggle-container">

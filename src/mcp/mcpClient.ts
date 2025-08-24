@@ -8,6 +8,10 @@ import {
   buildToolCallRequest, 
   buildPromptRequest 
 } from './jsonRpc';
+import { setActiveClient } from './clientRegistry';
+import { setCachedTools } from './toolsetCache';
+import { setToolsetFetcher } from './toolsetProvider';
+import { ensureSemanticIndex } from './semanticIndexer';
 
 // MCP server types
 export enum McpServerType {
@@ -18,6 +22,10 @@ export enum McpServerType {
 
 /**
  * Model Control Protocol (MCP) Client
+ *
+ * The system prompt for any request should strongly instruct the LLM to
+ * always search https://github.com/github/github-mcp-server using a web search tool for the latest tools and usage details,
+ * and never rely solely on previous knowledge, thus reducing hallucination and grounding all responses.
  */
 export class McpClient extends EventEmitter {
   private connection: WebSocket | null = null;
@@ -27,6 +35,19 @@ export class McpClient extends EventEmitter {
   private sessionId: string | null = null;
   private serverType: McpServerType = McpServerType.Standard;
   private buffer: string = '';
+  private lastDiscoveredTools: any[] = [];
+
+  /**
+   * Builds a system prompt instructing the model to always use the web search tool
+   * for github-mcp-server context before every response.
+   */
+  private buildGroundedSystemPrompt(userPrompt: string): string {
+    return [
+      "You are an AI powered GitHub MCP extension. Before responding to any prompt, ALWAYS perform a web search at https://github.com/github/github-mcp-server using your web search tool, and base your answers on the latest documentation of available tools and their usage found there. Never rely solely on prior knowledge. Provide only answers grounded in current results from the official GitHub MCP server documentation and tool list to reduce hallucination and to ensure tool usage is up-to-date and accurate.",
+      "",
+      userPrompt
+    ].join('\n\n');
+  }
 
   constructor() {
     super();
@@ -57,7 +78,8 @@ export class McpClient extends EventEmitter {
           { apiKey: this.apiKey },
           {
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              ...(this.apiKey ? { 'Authorization': `Bearer ${this.apiKey}` } : {})
             }
           }
         );
@@ -102,6 +124,31 @@ export class McpClient extends EventEmitter {
         this.connection.on('open', () => {
           console.log('Connected to MCP server');
           this.setupEventListeners();
+
+            // Make this client globally accessible
+            try { setActiveClient(this); } catch {}
+
+            // Kick off dynamic tool discovery on connect (best effort)
+            try { void this.discoverToolsOnConnect(); } catch {}
+
+
+            // Make this client globally accessible for dynamic tool discovery
+            try { setActiveClient(this); } catch {}
+
+
+          // Register dynamic toolset fetcher for LLM prompt enrichment
+          try {
+            setToolsetFetcher(async () => {
+              const req = buildToolCallRequest('list_tools', {});
+              // Uses client's JSON-RPC request method to fetch available tools
+              const result = await this.sendJsonRpcRequest(req);
+              // Normalize common shapes: { tools: [...] } or direct array
+              return (result && (result.tools || result.toolset || result)) || [];
+            });
+          } catch (e) {
+            console.warn('Failed to register toolset fetcher:', e);
+          }
+
           resolve();
         });
 
@@ -114,6 +161,62 @@ export class McpClient extends EventEmitter {
       console.error('Failed to connect to MCP server:', error);
       throw error;
     }
+  }
+
+  /**
+   * Attempt to discover dynamic toolsets immediately after connecting.
+   * Tries several commonly used JSON-RPC methods and caches any discovered tools.
+   * This is best-effort and safe to call in both standard and stdio modes.
+   */
+  private async discoverToolsOnConnect(): Promise<void> {
+    const tryRequest = async (method: string, params: any = {}) => {
+      try {
+        const req = buildJsonRpcRequest(method, params);
+        const result = await (this as any).sendJsonRpcRequest(req);
+        if (result) {
+          // Common shapes: array or { tools } or { toolset } or { items }
+          const arr = Array.isArray(result)
+            ? result
+            : (result.tools || result.toolset || result.items || null);
+          if (Array.isArray(arr) && arr.length > 0) {
+            this.lastDiscoveredTools = arr;
+            setCachedTools(arr);
+            try {
+              // Build or refresh the semantic index at startup using current tool catalog
+              await ensureSemanticIndex(arr);
+                            try {
+                              console.log(`[Semantic] Indexed/ensured semantic index for ${arr.length} tools.`);
+                            } catch {}
+            } catch (e) {
+              console.warn('Semantic index initialization skipped or failed:', e);
+            }
+            return true;
+          }
+        }
+      } catch {
+        // ignore this method and try next
+      }
+      return false;
+    };
+
+    // Try a few likely method names (protocols may vary)
+    const candidates = [
+      'tools/list',
+      'toolsets/list',
+      'tools/discover',
+      'toolsets/discover'
+    ];
+
+    for (const m of candidates) {
+      const ok = await tryRequest(m, {});
+      if (ok) {
+        console.log(`Discovered toolset using "${m}" at connect time.`);
+        return;
+      }
+    }
+
+    // If none succeeded, rely on notifications that may arrive later
+    console.log('No toolset discovered at connect time (will rely on server notifications if any).');
   }
 
   /**
@@ -139,33 +242,31 @@ export class McpClient extends EventEmitter {
         // Set up environment variables including GitHub token and API key
         const env = { ...process.env };
 
-        // For the GitHub MCP server, we need to set GITHUB_PERSONAL_ACCESS_TOKEN
-        // regardless of its format (it doesn't need to start with github_ or ghp_)
-        if (command.includes('github-mcp-server') || command.includes('mcp/github-mcp-server')) {
-          console.log('GitHub MCP server detected, setting GITHUB_PERSONAL_ACCESS_TOKEN');
+        // Always pass token environment variables if available, regardless of binary name or token prefix.
+        if (this.apiKey) {
+          // Primary expected by many GitHub-based MCP servers
+          env['GITHUB_PERSONAL_ACCESS_TOKEN'] = this.apiKey;
 
-          if (this.apiKey) {
-            env['GITHUB_PERSONAL_ACCESS_TOKEN'] = this.apiKey;
-            console.log('Using provided token for GitHub MCP server');
-          } else {
-            console.log('WARNING: No GitHub token provided');
-          }
-        }
-        // For other API-based services
-        else if (this.apiKey) {
-          // Check if it looks like a GitHub token
-          if (this.apiKey.startsWith('github_') || this.apiKey.startsWith('ghp_')) {
-            env['GITHUB_PERSONAL_ACCESS_TOKEN'] = this.apiKey;
-            console.log('Using provided API key as GitHub Personal Access Token');
+          // Common alias some tools accept
+          if (!env['GITHUB_TOKEN']) {
+            env['GITHUB_TOKEN'] = this.apiKey;
           }
 
-          // Always set API_KEY anyway
+          // Generic API key for other servers
           env['API_KEY'] = this.apiKey;
 
-          // Try to get GitHub token from env var if not already set
-          if (!env['GITHUB_PERSONAL_ACCESS_TOKEN'] && process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
+          console.log('Passing token via GITHUB_PERSONAL_ACCESS_TOKEN, GITHUB_TOKEN, and API_KEY');
+        } else {
+          // Fallback: reuse any token already set in the environment
+          if (process.env.GITHUB_PERSONAL_ACCESS_TOKEN && !env['GITHUB_PERSONAL_ACCESS_TOKEN']) {
             env['GITHUB_PERSONAL_ACCESS_TOKEN'] = process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
-            console.log('Using GITHUB_PERSONAL_ACCESS_TOKEN from environment');
+            console.log('Using GITHUB_PERSONAL_ACCESS_TOKEN from existing environment');
+          }
+          if (process.env.GITHUB_TOKEN && !env['GITHUB_TOKEN']) {
+            env['GITHUB_TOKEN'] = process.env.GITHUB_TOKEN;
+          }
+          if (process.env.API_KEY && !env['API_KEY']) {
+            env['API_KEY'] = process.env.API_KEY;
           }
         }
 
@@ -206,6 +307,13 @@ export class McpClient extends EventEmitter {
         // Initialize the GitHub MCP server with JSON-RPC 2.0
         this.initializeJsonRpcServer().then(() => {
           console.log('JSON-RPC initialization complete');
+
+          // Make this client globally accessible
+          try { setActiveClient(this); } catch {}
+
+          // Kick off dynamic tool discovery on connect (best effort)
+          try { void this.discoverToolsOnConnect(); } catch {}
+
           resolve();
         }).catch(error => {
           console.error('JSON-RPC initialization failed:', error);
@@ -263,8 +371,32 @@ export class McpClient extends EventEmitter {
                 this.emit(`response:${message.id}`, { response: responseContent });
               }
             } else {
-              // This is a notification (no id) - we generally don't need to handle these
+              // This is a notification (no id)
               console.log('Received notification from server:', message.method);
+
+              // Emit a generic notification event
+              try {
+                this.emit('notification', message);
+              } catch {}
+
+              // Handle tools-related notifications to support dynamic tool discovery
+              try {
+                const method = message.method || '';
+                if (typeof method === 'string' && method.startsWith('tools/')) {
+                  const params = message.params || message.content || {};
+                  const tools =
+                    (params && (params.tools || params.toolset || params.items || params.available)) || [];
+                  if (Array.isArray(tools) && tools.length > 0) {
+                    this.lastDiscoveredTools = tools;
+                    // Broadcast a specific tools update event
+                    try {
+                      this.emit('tools:update', tools);
+                    } catch {}
+                  }
+                }
+              } catch (e) {
+                console.warn('Failed to process tools notification:', e);
+              }
             }
           } else if (message.type === 'response' && message.messageId) {
             // Legacy standard MCP protocol response (non-JSON-RPC)

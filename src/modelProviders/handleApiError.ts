@@ -9,12 +9,43 @@ export function handleApiError(error: any): string {
     return 'Unknown error (null or undefined)';
   }
 
+  // Check if it's an Axios error
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status;
+    const statusText = error.response?.statusText || '';
+    const data = error.response?.data || {};
+
+    // Handle common API errors with specific messages
+    switch (status) {
+      case 401:
+        // Authentication error
+        return `Authentication failed (${status}): Please check your API key in the settings. For GitHub MCP servers (e.g., api.githubcopilot.com/mcp), provide a GitHub token via the Authorization header.`;
+
+      case 403:
+        // Authorization error
+        return `Authorization failed (${status}): Your API key doesn't have permission for this operation.`;
+
+      case 404:
+        // Not found
+        return `API endpoint not found (${status}): Please check your server configuration.`;
+
+      case 429:
+        // Rate limit
+        return `Rate limit exceeded (${status}): Please try again later.`;
+
+      default:
+        // Generic error with data
+        const errorMessage = data.error?.message || data.message || statusText || error.message;
+        return `API error (${status || 'unknown'}): ${errorMessage}`;
+    }
+  }
+
   // Handle Error objects
   if (error instanceof Error) {
     return error.message;
   }
 
-  // Handle axios error responses
+  // Handle axios error responses (for backward compatibility)
   if (typeof error === 'object' && error.response) {
     const status = error.response.status || 'unknown status';
     let message = '';
@@ -51,42 +82,4 @@ export function handleApiError(error: any): string {
 
   // Fallback
   return 'Unknown error';
-}
-/**
- * Utility function to handle API errors and provide user-friendly messages
- */
-export function handleApiError(error: any): string {
-  // Check if it's an Axios error
-  if (axios.isAxiosError(error)) {
-    const status = error.response?.status;
-    const statusText = error.response?.statusText || '';
-    const data = error.response?.data || {};
-
-    // Handle common API errors with specific messages
-    switch (status) {
-      case 401:
-        // Authentication error
-        return `Authentication failed (${status}): Please check your API key in the settings.`;
-
-      case 403:
-        // Authorization error
-        return `Authorization failed (${status}): Your API key doesn't have permission for this operation.`;
-
-      case 404:
-        // Not found
-        return `API endpoint not found (${status}): Please check your server configuration.`;
-
-      case 429:
-        // Rate limit
-        return `Rate limit exceeded (${status}): Please try again later.`;
-
-      default:
-        // Generic error with data
-        const errorMessage = data.error?.message || data.message || statusText || error.message;
-        return `API error (${status || 'unknown'}): ${errorMessage}`;
-    }
-  }
-
-  // Not an Axios error
-  return `Error: ${error.message || 'Unknown error'}`;
 }
