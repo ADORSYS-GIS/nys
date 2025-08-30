@@ -8,7 +8,7 @@ export class OpenAiProvider extends BaseModelProvider {
   private client: OpenAI | null = null;
   private modelName: string;
 
-  constructor(modelName: string = 'gpt-3.5-turbo') {
+  constructor(modelName: string = 'gpt-5') {
     super(
       'OpenAI',
       'https://api.openai.com/v1/chat/completions'
@@ -34,7 +34,6 @@ export class OpenAiProvider extends BaseModelProvider {
           content: userInput
         }
       ],
-      temperature: 0.2, // Low temperature for more deterministic results
     };
   }
 

@@ -36,6 +36,10 @@ export class McpClient extends EventEmitter {
   private serverType: McpServerType = McpServerType.Standard;
   private buffer: string = '';
   private lastDiscoveredTools: any[] = [];
+  // HTTP JSON-RPC mode (for remote servers like GitHub Copilot MCP)
+  private httpMode: boolean = false;
+  private httpBaseUrl: string | null = null;
+  private httpHeaders: Record<string, string> = {};
 
   /**
    * Builds a system prompt instructing the model to always use the web search tool
@@ -54,6 +58,34 @@ export class McpClient extends EventEmitter {
   }
 
   /**
+   * Set Authorization header directly.
+   */
+  public setAuthHeader(h: { Authorization: string }): void {
+    if (!h || typeof h.Authorization !== 'string') return;
+    this.httpHeaders = { ...this.httpHeaders, Authorization: h.Authorization };
+    // Also keep apiKey synced if header is Bearer
+    const m = /^Bearer\s+(.+)$/i.exec(h.Authorization);
+    if (m) this.apiKey = m[1];
+  }
+
+  /**
+   * Set arbitrary headers (used for X-MCP-Toolsets, X-MCP-Readonly, etc.).
+   */
+  public setHeaders(h: Record<string, string>): void {
+    if (!h || typeof h !== 'object') return;
+    this.httpHeaders = { ...this.httpHeaders, ...h };
+  }
+
+  /**
+   * Convenience: set bearer token for Authorization header.
+   */
+  public setBearerToken(token: string): void {
+    if (!token) return;
+    this.apiKey = token;
+    this.httpHeaders = { ...this.httpHeaders, Authorization: `Bearer ${token}` };
+  }
+
+  /**
    * Connect to the MCP server
    * @param serverUrl URL of the MCP server
    * @param apiKey API key for authentication (optional for filesystem server)
@@ -66,35 +98,67 @@ export class McpClient extends EventEmitter {
 
     try {
       // If using stdio mode, start child process for MCP server
-   if (this.serverType === McpServerType.Stdio) {
+      if (this.serverType === McpServerType.Stdio) {
         console.log('Connecting to MCP server via stdio...');
         return this.connectViaStdio(serverUrl);
       }
-      // If using a standard MCP server, establish session via HTTP first
+      // If using a standard MCP server
       else if (this.serverType === McpServerType.Standard) {
-        console.log('Connecting to standard MCP server...');
-        const sessionResponse = await axios.post(
-          `${this.serverUrl}/api/session`,
-          { apiKey: this.apiKey },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              ...(this.apiKey ? { 'Authorization': `Bearer ${this.apiKey}` } : {})
-            }
+        const isHttp = /^https?:\/\//i.test(this.serverUrl || '');
+        if (isHttp) {
+          // Pure HTTP JSON-RPC mode (e.g., GitHub Copilot MCP: https://api.githubcopilot.com/mcp/)
+          this.httpMode = true;
+          // Normalize base URL (keep trailing slash so relative methods work)
+          this.httpBaseUrl = this.serverUrl || '';
+          if (!this.httpBaseUrl.endsWith('/')) this.httpBaseUrl += '/';
+          if (this.apiKey) {
+            this.httpHeaders['Authorization'] = `Bearer ${this.apiKey}`;
           }
-        );
+          this.httpHeaders['Content-Type'] = 'application/json';
 
-        if (sessionResponse.status !== 200) {
-          throw new Error(`Failed to create session: ${sessionResponse.statusText}`);
+          // Make this client globally accessible and perform best-effort tool discovery
+          try { setActiveClient(this); } catch {}
+
+          // Register dynamic toolset fetcher for LLM prompt enrichment
+          try {
+            setToolsetFetcher(async () => {
+              const req = buildToolCallRequest('list_tools', {});
+              const result = await this.sendJsonRpcRequest(req);
+              return (result && (result.tools || result.toolset || result)) || [];
+            });
+          } catch (e) {
+            console.warn('Failed to register toolset fetcher (HTTP mode):', e);
+          }
+
+          // Kick off dynamic tool discovery on connect (best effort)
+          try { await this.discoverToolsOnConnect(); } catch {}
+          console.log('HTTP JSON-RPC MCP connected (no WebSocket).');
+          return;
+        } else {
+          console.log('Connecting to standard MCP server (WebSocket session model)...');
+          const sessionResponse = await axios.post(
+            `${this.serverUrl}/api/session`,
+            { apiKey: this.apiKey },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                ...(this.apiKey ? { 'Authorization': `Bearer ${this.apiKey}` } : {})
+              }
+            }
+          );
+
+          if (sessionResponse.status !== 200) {
+            throw new Error(`Failed to create session: ${sessionResponse.statusText}`);
+          }
+
+          this.sessionId = sessionResponse.data.sessionId;
+
+          // Now connect to the WebSocket with session
+          const wsScheme = this.serverUrl.startsWith('https') ? 'wss' : 'ws';
+          const baseUrl = this.serverUrl.replace(/^https?:\/\//, '');
+          const wsUrl = `${wsScheme}://${baseUrl}/api/ws/${this.sessionId}`;
+          this.connection = new WebSocket(wsUrl);
         }
-
-        this.sessionId = sessionResponse.data.sessionId;
-
-        // Now connect to the WebSocket with session
-        const wsScheme = this.serverUrl.startsWith('https') ? 'wss' : 'ws';
-        const baseUrl = this.serverUrl.replace(/^https?:\/\//, '');
-        const wsUrl = `${wsScheme}://${baseUrl}/api/ws/${this.sessionId}`;
-        this.connection = new WebSocket(wsUrl);
       }
       // If using filesystem MCP server, connect directly via WebSocket
       else if (this.serverType === McpServerType.FileSystem) {
@@ -116,6 +180,13 @@ export class McpClient extends EventEmitter {
           return;
         }
 
+        // In HTTP JSON-RPC mode, resolve immediately (no WebSocket events)
+        if (this.httpMode) {
+          try { setActiveClient(this); } catch {}
+          resolve();
+          return;
+        }
+
         if (!this.connection) {
           reject(new Error('WebSocket connection not initialized'));
           return;
@@ -125,16 +196,11 @@ export class McpClient extends EventEmitter {
           console.log('Connected to MCP server');
           this.setupEventListeners();
 
-            // Make this client globally accessible
-            try { setActiveClient(this); } catch {}
+          // Make this client globally accessible
+          try { setActiveClient(this); } catch {}
 
-            // Kick off dynamic tool discovery on connect (best effort)
-            try { void this.discoverToolsOnConnect(); } catch {}
-
-
-            // Make this client globally accessible for dynamic tool discovery
-            try { setActiveClient(this); } catch {}
-
+          // Kick off dynamic tool discovery on connect (best effort)
+          try { void this.discoverToolsOnConnect(); } catch {}
 
           // Register dynamic toolset fetcher for LLM prompt enrichment
           try {
@@ -541,6 +607,30 @@ export class McpClient extends EventEmitter {
       throw new Error('Not connected to MCP server');
     }
 
+    // HTTP JSON-RPC mode
+    if (this.httpMode && this.httpBaseUrl) {
+      try {
+        const url = this.httpBaseUrl; // Remote server expects POST to base (e.g., https://api.githubcopilot.com/mcp/)
+        const headers = { ...(this.httpHeaders || {}) } as any;
+        // Ensure Authorization header carried if apiKey set later via setter
+        if (this.apiKey && !headers['Authorization']) headers['Authorization'] = `Bearer ${this.apiKey}`;
+        const resp = await axios.post(url, request, { headers, timeout: 30000 });
+        const data = resp?.data;
+        if (data && typeof data === 'object') {
+          if ('result' in data) return (data as any).result;
+          // Some servers reply directly with the object/array result
+          return data;
+        }
+        return data;
+      } catch (e: any) {
+        // Normalize error shape
+        const status = e?.response?.status ?? e?.code ?? 500;
+        const message = e?.message || e?.response?.statusText || 'HTTP request failed';
+        const details = e?.response?.data ?? e?.data ?? null;
+        throw { status, message, details };
+      }
+    }
+
     return new Promise((resolve, reject) => {
       try {
         const messageId = request.id;
@@ -548,13 +638,13 @@ export class McpClient extends EventEmitter {
         // Set up a one-time listener for this specific message ID
         this.once(`response:${messageId}`, (data) => {
           if (data.error) {
-                // Return complete error information including status and message for better debugging
-                const errorObject = {
-                  status: data.error.code || 500,
-                  message: data.error.message || data.error,
-                  details: data.error.data || null
-                };
-                reject(errorObject);
+            // Return complete error information including status and message for better debugging
+            const errorObject = {
+              status: data.error.code || 500,
+              message: data.error.message || data.error,
+              details: data.error.data || null
+            };
+            reject(errorObject);
           } else {
             resolve(data.response);
           }
@@ -592,6 +682,10 @@ export class McpClient extends EventEmitter {
    * Check if connected to the MCP server
    */
   public isConnected(): boolean {
+    if (this.httpMode) {
+      // In HTTP JSON-RPC mode, we consider connection available after connect() configured base URL
+      return !!this.httpBaseUrl;
+    }
     if (this.serverType === McpServerType.Stdio) {
       return this.childProcess !== null && !this.childProcess.killed;
     }

@@ -80,7 +80,8 @@ function buildDocumentsFromTools(tools: any[]): ToolDoc[] {
   for (const t of Array.isArray(tools) ? tools : []) {
     const name = normalizeName(t?.name);
     if (!name) continue;
-    const desc = typeof t?.description === 'string' ? t.description : '';
+    const descRaw = typeof t?.description === 'string' ? t.description : '';
+    const desc = descRaw.length > 512 ? (descRaw.slice(0, 512) + '…') : descRaw;
     const p = (t && (t.parameters || t.args || t.inputs)) || [];
     let paramsText = '';
     if (Array.isArray(p)) {
@@ -88,13 +89,13 @@ function buildDocumentsFromTools(tools: any[]): ToolDoc[] {
         .map((x: any) => x && typeof x.name === 'string' ? `${x.name}:${x.type || ''}` : '')
         .filter(Boolean)
         .join(', ');
-      if (kv) paramsText = `\nparams: ${kv}`;
+      if (kv) paramsText = `\nparams: ${kv.slice(0, 256)}`;
     } else if (p && typeof p === 'object') {
       const props = (p as any).properties || (p as any).schema?.properties || {};
       const kv = Object.keys(props)
-        .map(k => `${k}:${props[k]?.type || ''}`)
+        .map(k => `${k}:${(props as any)[k]?.type || ''}`)
         .join(', ');
-      if (kv) paramsText = `\nparams: ${kv}`;
+      if (kv) paramsText = `\nparams: ${kv.slice(0, 256)}`;
     }
     const text = `tool: ${name}\n${desc}${paramsText}`.trim();
     docs.push({ id: name, text, metadata: { name, description: desc } });
@@ -462,14 +463,15 @@ export async function ensureSemanticIndex(tools: any[]): Promise<void> {
     return;
   }
 
-  // Embed in batches
-  const batchSize = 64;
+  // Embed in smaller batches to reduce latency and memory pressure
+  const batchSize = 16;
   const vectors: number[][] = [];
   try { console.log(`[Semantic][Index] Building embeddings for ${docs.length} docs in batches of ${batchSize} (namespace=${namespace})`); } catch {}
   for (let i = 0; i < docs.length; i += batchSize) {
     const batch = docs.slice(i, i + batchSize);
     try { console.log(`[Semantic][Embed] Processing batch ${i}-${i + batch.length - 1}`); } catch {}
-    const emb = await tryEmbed(embeddingUrl, batch.map(d => d.text));
+    const texts = batch.map(d => d.text.length > 800 ? d.text.slice(0, 800) + '…' : d.text);
+    const emb = await tryEmbed(embeddingUrl, texts);
     vectors.push(...emb);
   }
   try { console.log(`[Semantic][Index] Embeddings ready: total=${vectors.length} dim=${vectors[0]?.length || 0}`); } catch {}

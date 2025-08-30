@@ -80,7 +80,9 @@ export class LlmParser {
     // Use context-aware toggle: only read .nys if a non-empty context was passed in
     let nysContext = '';
     try {
-      if (typeof context === 'string' && context.trim().length > 0) {
+      // Read .nys context whenever context-aware mode is enabled upstream.
+      // We detect that by context being passed (even if empty).
+      if (typeof context !== 'undefined') {
         nysContext = await this.readNysContext();
       }
     } catch {}
@@ -246,18 +248,66 @@ export class LlmParser {
 
       console.log('Extracted content from API response:', content.substring(0, 100) + '...');
 
-      // Extract the tool call(s): handle multi-line, NO_TOOL_MATCH, or a single tool
+      // Extract the tool call(s): handle multi-line, JSON arrays/objects, or NO_TOOL_MATCH
       // If empty/invalid, return NO_TOOL_MATCH as string
       if (typeof content === 'string') {
-        const normalized = content.trim();
+        // Strip code fences and markdown wrappers
+        let normalized = content.trim();
+        normalized = normalized.replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
         if (!normalized) {
           return "NO_TOOL_MATCH";
         }
         if (normalized === 'NO_TOOL_MATCH') {
           return "NO_TOOL_MATCH";
         }
-        // Support multi-command LLM responses (one per line)
-        const lines = normalized.split('\n').map(l => l.trim()).filter(Boolean);
+
+        // JSON array/object support for sequential commands
+        if (normalized.startsWith('{') || normalized.startsWith('[')) {
+          try {
+            const parsedJson = JSON.parse(normalized);
+            const toTool = (x: any): ToolCommand | null => {
+              if (!x) return null;
+              if (typeof x === 'string') {
+                return this.parseToolCallFromLlm(x);
+              }
+              const name = typeof x.name === 'string' ? x.name : undefined;
+              const params = (x && typeof x.params === 'object' && x.params) ? x.params : (x.arguments || x.args || undefined);
+              if (name && params && typeof params === 'object') {
+                return { name, params } as ToolCommand;
+              }
+              return null;
+            };
+            const out: ToolCommand[] = [];
+            if (Array.isArray(parsedJson)) {
+              for (const it of parsedJson) {
+                const cmd = toTool(it);
+                if (cmd) out.push(cmd);
+              }
+            } else if (parsedJson && Array.isArray(parsedJson.commands)) {
+              for (const it of parsedJson.commands) {
+                const cmd = toTool(it);
+                if (cmd) out.push(cmd);
+              }
+            } else {
+              const one = toTool(parsedJson);
+              if (one) out.push(one);
+            }
+            if (out.length > 0) {
+              const normName = (s: any) => (typeof s === 'string' ? s : '').replace(/^github\./, '').replace(/^_+|_+$/g, '').toLowerCase();
+              const allow = new Set<string>((Array.isArray(selectedTools) ? selectedTools : []).map((t: any) => normName(t?.name)));
+              const filtered = out.filter(cmd => allow.has(normName(cmd.name)));
+              if (filtered.length > 0) return filtered;
+              return "NO_TOOL_MATCH";
+            }
+          } catch {
+            // fall back to line parsing
+          }
+        }
+
+        // Support multi-command LLM responses (one per line), tolerate numbering/bullets
+        const lines = normalized.split('\n')
+          .map(l => l.replace(/^(\s*\d+[\.)]\s+|\s*[-*+]\s+)/, '').trim())
+          .filter(Boolean);
         const toolCommands: ToolCommand[] = [];
         for (const line of lines) {
           const toolObj = this.parseToolCallFromLlm(line);
@@ -658,34 +708,23 @@ export class LlmParser {
       toolsSection = lines.join('\n');
     }
 
-    return `You are a tool command parser for developer automation.
-Your main job is to convert natural language into structured tool commands for the GitHub MCP Server (https://github.com/github/github-mcp-server).
+    return `You are a tool-command generator. Convert the user's request into grounded, executable tool calls.
+CRITICAL RULES (Anti-hallucination):
+- Use ONLY the tools listed in "Available Tools". Do NOT invent tool names or parameters.
+- Ground your choices STRICTLY on the provided Context and Available Tools. Do NOT assume any facts not present there.
+- If unsure or if no tool fits, output exactly NO_TOOL_MATCH.
+- Tool names must be exact (snake_case). Parameter names/shape must match the listed tools.
 
-Context (.nys directory content from the current project):
+Context (grounding):
 ${extraContext ? `-----\n${extraContext}\n-----\n` : '[No additional context provided]\n'}
 
 Available Tools (selected for this prompt):
 ${toolsSection}
 
-Instructions:
-- Use ONLY the tools listed in "Available Tools" above. Do not invent tool names or parameters.
-- If none of the available tools match the user's request, reply with "NO_TOOL_MATCH".
-- TOOL NAMES are ALWAYS in snake_case (use underscores between words, do not use dots or camelCase), e.g., use "create_repository" not "createRepository".
-- Example: tool:create_repository owner=someuser name=demo_repo
-- If the context describes a GitHub repo/project and the user's request is to "spin up" or setup infrastructure, figure out which tools (and in what sequence) are needed; output one tool call per line, in order.
-- Parameter names and value shapes must match the tools listed above. Prefer booleans (true/false) and numbers where appropriate. Use exact branch/owner/repo strings when specified.
-- If you optionally consult official docs (https://github.com/github/github-mcp-server) to clarify semantics, do NOT introduce tools or params not present in "Available Tools" unless a follow-up discovery step enables them.
-
-When you process a user request:
-- Analyze the prompt (and the context if provided).
-- Respond ONLY with the sequence of structured tool commands, in this format, one command per line:
-  tool:tool_name param1=value1 param2=value2
-
-If the input doesn't specify a valid tool/usage you can find among the available tools, reply with "NO_TOOL_MATCH" and nothing else.
-
-Output rules:
-- Output must only be the formatted tool command(s) (one per line) or NO_TOOL_MATCH, nothing else.
-- Do not include explanations, extra text, or chat summaries.`;
+Response format (strict):
+- If one command: a single line in this format =>  tool:tool_name param1=value1 param2=value2
+- If multiple commands are required, output one command per line in the required sequence (top-to-bottom).
+- Output ONLY the command line(s) or NO_TOOL_MATCH. No explanations, no markdown, no code fences.`;
   }
 
   /**

@@ -41,7 +41,7 @@
         {
           "id": "mcp-client",
           "title": "MCP AI Chat",
-          "icon": "images/ext.jpeg"
+          "icon": "images/mcp.svg"
         }
       ]
     },
@@ -50,8 +50,7 @@
         {
           "id": "mcpChat",
           "name": "AI Chat",
-          "type": "webview",
-          "when": "config.mcpClient.serverUrl"
+          "type": "webview"
         }
       ]
     },
@@ -109,6 +108,16 @@
           "type": "string",
           "default": "",
           "description": "GitHub Personal Access Token required for github-mcp-server"
+        },
+        "mcpClient.remoteToolsets": {
+          "type": "string",
+          "default": "",
+          "description": "Comma-separated toolset names to send via X-MCP-Toolsets header when using a remote HTTP MCP server."
+        },
+        "mcpClient.remoteReadonly": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, sends X-MCP-Readonly: true when using a remote HTTP MCP server."
         },
         "mcpClient.serverType": {
           "type": "string",
