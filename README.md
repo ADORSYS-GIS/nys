@@ -4,6 +4,8 @@ A Visual Studio Code extension that connects to Model Context Protocol (MCP) ser
 
 ![Extension icon](images/ext.jpeg)
 
+![Extension icon](images/demo.gif)
+
 ## Key Features
 
 - Connect to MCP servers
