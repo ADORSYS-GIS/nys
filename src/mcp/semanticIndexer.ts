@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { buildJsonRpcRequest } from './jsonRpc';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { MemoryVectorStore } from 'langchain/vectorstores/memory';
 
 function sleep(ms: number) { return new Promise(res => setTimeout(res, ms)); }
 
@@ -21,6 +22,23 @@ export type VectorHit = {
 // Simple in-memory cache to avoid re-indexing too often within a session
 let lastNamespaceSignature: string | null = null;
 let lastIndexedAt = 0;
+
+// LangChain in-memory vector store per namespace (replaces Milvus by default)
+const _memStores: Map<string, MemoryVectorStore> = new Map();
+
+// Lightweight embeddings adapter that reuses existing tryEmbed() logic.
+// This avoids requiring users to configure separate LangChain embedding providers.
+const _embeddingsAdapter: any = {
+  embedDocuments: async (texts: string[]): Promise<number[][]> => {
+    const { embeddingUrl } = getConfig() as any;
+    return await tryEmbed(embeddingUrl, texts.map(t => String(t ?? '')));
+  },
+  embedQuery: async (text: string): Promise<number[]> => {
+    const { embeddingUrl } = getConfig() as any;
+    const [v] = await tryEmbed(embeddingUrl, [String(text ?? '')]);
+    return Array.isArray(v) ? v : [];
+  }
+};
 
 import { getMergedConfig, hasExternalOverride } from '../config/configLoader';
 function getConfig() {
@@ -450,7 +468,7 @@ async function milvusSearch(client: any, collectionName: string, vector: number[
 
 export async function ensureSemanticIndex(tools: any[]): Promise<void> {
   const cfg = getConfig() as any;
-  const { embeddingUrl, vectorUrl, namespace, milvusAddress, milvusCollectionPrefix } = cfg;
+  const { namespace } = cfg;
 
   const docs = buildDocumentsFromTools(tools);
   if (docs.length === 0) return;
@@ -463,141 +481,58 @@ export async function ensureSemanticIndex(tools: any[]): Promise<void> {
     return;
   }
 
-  // Embed in smaller batches to reduce latency and memory pressure
-  const batchSize = 16;
-  const vectors: number[][] = [];
-  try { console.log(`[Semantic][Index] Building embeddings for ${docs.length} docs in batches of ${batchSize} (namespace=${namespace})`); } catch {}
-  for (let i = 0; i < docs.length; i += batchSize) {
-    const batch = docs.slice(i, i + batchSize);
-    try { console.log(`[Semantic][Embed] Processing batch ${i}-${i + batch.length - 1}`); } catch {}
-    const texts = batch.map(d => d.text.length > 800 ? d.text.slice(0, 800) + '…' : d.text);
-    const emb = await tryEmbed(embeddingUrl, texts);
-    vectors.push(...emb);
-  }
-  try { console.log(`[Semantic][Index] Embeddings ready: total=${vectors.length} dim=${vectors[0]?.length || 0}`); } catch {}
-
-  // Align docs and vectors if counts mismatch
-  let upsertDocs = docs;
-  let upsertVectors = vectors;
-  if (vectors.length !== docs.length) {
-    const min = Math.min(docs.length, vectors.length);
-    try { console.warn(`[Semantic][Index] Embedding/doc count mismatch: docs=${docs.length} vectors=${vectors.length}. Using first ${min}.`); } catch {}
-    if (min <= 0) {
-      try { console.warn('[Semantic][Index] No embeddings produced; skipping upsert.'); } catch {}
-      return;
-    }
-    upsertDocs = docs.slice(0, min);
-    upsertVectors = vectors.slice(0, min);
+  // Build/replace in-memory vector store using LangChain and our embedding adapter (no external DB)
+  try {
+    const texts = docs.map(d => d.text.length > 800 ? d.text.slice(0, 800) + '…' : d.text);
+    const metadatas = docs.map(d => ({ id: d.id, name: d.metadata?.name || d.id, description: d.metadata?.description || '' }));
+    const store = await MemoryVectorStore.fromTexts(texts, metadatas, _embeddingsAdapter);
+    _memStores.set(namespace, store);
+    lastNamespaceSignature = sig;
+    lastIndexedAt = now;
+    try { console.log(`[Semantic][Index][Memory] Indexed ${docs.length} docs for namespace=${namespace}`); } catch {}
+    return;
+  } catch (e) {
+    try { console.warn('[Semantic][Index][Memory] Failed to build in-memory index:', e); } catch {}
+    // If memory index fails, we simply do not index; callers will fallback gracefully.
+    return;
   }
 
-  // Prefer Milvus if configured
-  if (milvusAddress && upsertVectors.length > 0) {
-    try { await ensureMilvusStarted(cfg); } catch {}
-    const client = await getMilvusClient();
-    if (client) {
-      const baseWait = Math.max(0, Number(cfg.milvusWaitSeconds ?? 0));
-      const waitSec = _milvusEverReady ? Math.min(baseWait, 1) : baseWait;
-      try { console.log(`[Semantic][Milvus] Waiting up to ${waitSec}s for readiness before indexing...`); } catch {}
-      try { await waitForMilvusReady(client, waitSec); _milvusEverReady = true; } catch {}
-      const dim = upsertVectors[0].length;
-      const collectionName = sanitizeCollectionName(`${milvusCollectionPrefix || 'tools_'}${namespace}`);
-      await ensureMilvusCollection(client, collectionName, dim);
-      try { console.log(`[Semantic][Milvus] Upserting ${upsertDocs.length} vectors (dim=${dim}) into collection ${collectionName}`); } catch {}
-      await milvusDeleteByIds(client, collectionName, upsertDocs.map(d => d.id));
-      await milvusInsert(client, collectionName, upsertDocs, upsertVectors);
-      // Attempt to flush to ensure immediate searchability (try multiple SDK shapes)
-      try {
-        if (typeof (client as any).flush === 'function') {
-          try { await (client as any).flush({ collection_names: [collectionName] }); } catch {}
-          try { await (client as any).flush({ collection_name: collectionName }); } catch {}
-        }
-        if (typeof (client as any).flushSync === 'function') {
-          try { await (client as any).flushSync({ collection_name: collectionName }); } catch {}
-        }
-        try { console.log(`[Semantic][Milvus] Flush issued for collection ${collectionName}`); } catch {}
-      } catch {}
-      // Ensure loaded
-      try { await client.loadCollection({ collection_name: collectionName }); } catch {}
-      try { console.log(`[Semantic][Milvus] Upsert complete for ${docs.length} items in ${collectionName}`); } catch {}
-      lastNamespaceSignature = sig;
-      lastIndexedAt = now;
-      return;
-    } else {
-      try { console.warn('[Semantic][Milvus] Client not available (SDK missing or connection failed); skipping Milvus upsert.'); } catch {}
-    }
-  }
-
-  // Fallback to Vector MCP server if configured
-  if (vectorUrl && vectorUrl.trim().length > 0 && vectors.length > 0) {
-    try {
-      try { console.log(`[Semantic][VectorMCP] Upserting ${docs.length} vectors into namespace ${namespace} via ${vectorUrl}`); } catch {}
-      await tryUpsertVectors(vectorUrl, namespace, docs, vectors);
-      try { console.log(`[Semantic][VectorMCP] Upsert complete for ${docs.length} items (namespace=${namespace})`); } catch {}
-      lastNamespaceSignature = sig;
-      lastIndexedAt = now;
-      return;
-    } catch (e) {
-      try { console.warn('[Semantic][VectorMCP] Upsert failed:', e); } catch {}
-      // ignore
-    }
-  }
-
-  // If we reached here, no backend was used
-  try { console.warn('[Semantic][Index] No vector backend configured/usable; vectors not upserted.'); } catch {}
 }
 
 export async function semanticSearch(query: string, context: string = '', topK?: number): Promise<VectorHit[]> {
   const cfg = getConfig() as any;
-  const { embeddingUrl, vectorUrl, namespace, topK: cfgTopK, milvusAddress, milvusCollectionPrefix } = cfg;
+  const { namespace, topK: cfgTopK } = cfg;
   const k = Math.max(1, typeof topK === 'number' && topK > 0 ? topK : cfgTopK);
 
-  // Build query text and embed (Embedding MCP if URL provided; otherwise direct provider)
+  // Build query text
   const fullQuery = [query || ''];
   const ctx = typeof context === 'string' ? context.trim() : '';
   if (ctx) fullQuery.push(ctx.slice(0, 4000));
   const qText = fullQuery.join('\n\n');
 
-  let qVec: number[] | undefined;
-  try {
-    [qVec] = await tryEmbed(embeddingUrl, [qText]);
-  } catch (e) {
-    try { console.warn('[Semantic][Search] Query embedding failed:', e); } catch {}
-    return [];
-  }
-  if (!Array.isArray(qVec) || qVec.length === 0) {
-    try { console.warn('[Semantic][Search] Empty query embedding; aborting search.'); } catch {}
-    return [];
-  }
-
-  // Prefer Milvus search if configured
-  if (milvusAddress) {
-    try { await ensureMilvusStarted(cfg); } catch {}
-    const client = await getMilvusClient();
-    if (client) {
-      const baseWait = Math.max(0, Number(cfg.milvusWaitSeconds ?? 0));
-      const waitSec = _milvusEverReady ? Math.min(baseWait, 1) : baseWait;
-      try { console.log(`[Semantic][Milvus] Waiting up to ${waitSec}s for readiness before search...`); } catch {}
-      try { await waitForMilvusReady(client, waitSec); _milvusEverReady = true; } catch {}
-      const collectionName = sanitizeCollectionName(`${milvusCollectionPrefix || 'tools_'}${namespace}`);
-      // Ensure collection is loaded; ignore errors silently
-      try { await client.loadCollection({ collection_name: collectionName }); } catch {}
-      const resHits = await milvusSearch(client, collectionName, qVec, k);
-      try { console.log(`[Semantic][Search] backend=Milvus collection=${collectionName} hits=${resHits.length}`); } catch {}
-      return resHits;
-    }
-  }
-
-  // Fallback to Vector MCP server if configured
-  if (vectorUrl && vectorUrl.trim().length > 0) {
+  // Memory vector store first (default)
+  const store = _memStores.get(namespace);
+  if (store) {
     try {
-      const res = await tryQueryVectors(vectorUrl, namespace, qVec, k);
-      try { console.log(`[Semantic][Search] backend=VectorMCP namespace=${namespace} hits=${res.length}`); } catch {}
-      return res;
+      const qVec = await _embeddingsAdapter.embedQuery(qText);
+      if (Array.isArray(qVec) && qVec.length > 0) {
+        const pairs = await (store as any).similaritySearchVectorWithScore(qVec, k);
+        const out: VectorHit[] = [];
+        for (const p of (pairs || [])) {
+          const doc: any = p && Array.isArray(p) ? p[0] : null;
+          const score: any = p && Array.isArray(p) ? p[1] : undefined;
+          const id = doc?.metadata?.id || doc?.metadata?.name || '';
+          if (!id) continue;
+          out.push({ id: String(id), score: typeof score === 'number' ? score : undefined, metadata: doc?.metadata || undefined });
+        }
+        try { console.log(`[Semantic][Search][Memory] namespace=${namespace} hits=${out.length}`); } catch {}
+        return out;
+      }
     } catch (e) {
-      try { console.warn('[Semantic][Search] Vector MCP query failed:', e); } catch {}
-      // ignore and fall through
+      try { console.warn('[Semantic][Search][Memory] failed:', e); } catch {}
     }
   }
 
+  // No memory index available; nothing to return
   return [];
 }

@@ -4,6 +4,7 @@ import { getMergedConfig, hasExternalOverride } from '../config/configLoader';
 import { ModelProviderFactory } from '../modelProviders/modelProviderFactory';
 import { getCachedTools } from '../mcp/toolsetCache';
 import { getSemanticToolsetExternal } from '../mcp/toolsetProvider';
+// Semantic memory-based grounding (LangChain-backed via semanticIndexer)
 import { ensureSemanticIndex, semanticSearch } from '../mcp/semanticIndexer';
 
 interface LlmParserOptions {
@@ -121,45 +122,42 @@ export class LlmParser {
       }
     }
 
-    // Build semantic grounding from vector DB (Milvus or external embedding server)
+    // Build semantic grounding using shared semantic index (LangChain in-memory vector store)
     let combinedContext = nysContext;
     try {
       const cachedTools = await getCachedTools().catch(() => []);
       if (Array.isArray(cachedTools) && cachedTools.length > 0) {
-        try { await ensureSemanticIndex(cachedTools as any); } catch {}
-        try {
-          const hits = await semanticSearch(input, nysContext, 20);
-          if (Array.isArray(hits) && hits.length > 0) {
-            const norm = (s: any) => (typeof s === 'string' ? s : '')
-              .replace(/^github\./, '')
-              .replace(/^_+|_+$/g, '')
-              .toLowerCase();
-            const byName = new Map<string, any>();
-            for (const t of cachedTools as any[]) {
-              const n = norm(t?.name);
-              if (n) byName.set(n, t);
-            }
-            const lines: string[] = [];
-            for (const h of hits) {
-              const id = norm((h as any)?.id || (h as any)?.metadata?.name || '');
-              const tool = byName.get(id);
-              if (tool) {
-                const name = typeof tool.name === 'string' ? tool.name : id;
-                const desc = typeof tool.description === 'string' ? tool.description : '';
-                lines.push(`- ${name}${desc ? `: ${desc}` : ''}`);
-              }
-              if (lines.length >= 20) break;
-            }
-            if (lines.length > 0) {
-              const semanticSection = `Semantic grounding from tool index (top ${lines.length}):\n${lines.join('\n')}`;
-              combinedContext = [nysContext, semanticSection].filter(Boolean).join('\n\n');
-            }
-            console.log(`[SemanticGrounding] hits=${hits.length}, included=${lines.length}, combinedContextChars=${combinedContext.length}`);
-          } else {
-            console.log('[SemanticGrounding] No hits from semanticSearch');
+        await ensureSemanticIndex(cachedTools as any);
+        const hits = await semanticSearch(input, nysContext, 30);
+
+        if (Array.isArray(hits) && hits.length > 0) {
+          const norm = (s: any) => (typeof s === 'string' ? s : '')
+            .replace(/^github\./, '')
+            .replace(/^_+|_+$/g, '')
+            .toLowerCase();
+          const byName = new Map<string, any>();
+          for (const t of cachedTools as any[]) {
+            const n = norm(t?.name);
+            if (n) byName.set(n, t);
           }
-        } catch (e) {
-          console.log('[SemanticGrounding] semanticSearch failed:', e);
+          const lines: string[] = [];
+          for (const h of hits) {
+            const id = norm(h.id || h.metadata?.name || '');
+            const tool = byName.get(id);
+            if (tool) {
+              const name = typeof tool.name === 'string' ? tool.name : id;
+              const desc = typeof tool.description === 'string' ? tool.description : '';
+              lines.push(`- ${name}${desc ? `: ${desc}` : ''}`);
+            }
+            if (lines.length >= 20) break;
+          }
+          if (lines.length > 0) {
+            const semanticSection = `Semantic grounding from tool index (top ${lines.length}):\n${lines.join('\n')}`;
+            combinedContext = [nysContext, semanticSection].filter(Boolean).join('\n\n');
+          }
+          console.log(`[SemanticGrounding] hits=${hits.length}, included=${lines.length}, combinedContextChars=${combinedContext.length}`);
+        } else {
+          console.log('[SemanticGrounding] No hits from semantic index');
         }
       } else {
         console.log('[SemanticGrounding] No cached tools available for grounding');
@@ -738,7 +736,9 @@ Response format (strict):
     }
 
     // Clean up the response
-    const cleaned = content.trim();
+    let cleaned = content.trim();
+    // Strip optional leading arrow ('=>') used in some formatted outputs
+    cleaned = cleaned.replace(/^\s*=>\s*/, '');
 
     // Check if content is empty after trimming
     if (!cleaned) {
@@ -751,28 +751,65 @@ Response format (strict):
       return null;
     }
 
-    // Check for tool: format
-    if (cleaned.startsWith('tool:')) {
-      const [toolPrefix, ...paramParts] = cleaned.split(' ');
-      // Remove 'tool:' prefix and sanitize 'github.' or leading/trailing underscores
-      let toolName = toolPrefix.substring(5);
-      if (toolName.startsWith('github.')) {
-        toolName = toolName.substring('github.'.length);
-      }
-      toolName = toolName.replace(/^_+|_+$/g, '');
+    // Helper to normalize tool name (strip github. and underscores)
+    const normalizeToolName = (name: string): string => {
+      let t = name || '';
+      if (t.startsWith('github.')) t = t.substring('github.'.length);
+      return t.replace(/^_+|_+$/g, '');
+    };
 
-      // Parse parameters
+    // Value parser: try JSON (for []/{} or quoted), then boolean/number, else raw string
+    const parseValue = (raw: string): any => {
+      const v = (raw ?? '').trim();
+      if (!v) return v;
+      // If wrapped in quotes, try to JSON parse or strip quotes
+      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+        try { return JSON.parse(v); } catch { return v.slice(1, -1); }
+      }
+      // JSON array/object
+      if ((v.startsWith('[') && v.endsWith(']')) || (v.startsWith('{') && v.endsWith('}'))) {
+        try { return JSON.parse(v); } catch { /* fall-through */ }
+      }
+      if (v === 'true') return true;
+      if (v === 'false') return false;
+      const n = Number(v);
+      if (!isNaN(n) && /^-?\d+(?:\.\d+)?$/.test(v)) return n;
+      return v;
+    };
+
+    // Parse a param string like "k1=v1 k2=v2" into object
+    const parseParams = (paramParts: string[]): Record<string, any> => {
       const params: Record<string, any> = {};
       for (const part of paramParts) {
-        const [key, value] = part.split('=');
-        if (key && value) {
-          // Try to convert numbers and booleans
-          if (value === 'true') params[key] = true;
-          else if (value === 'false') params[key] = false;
-          else if (!isNaN(Number(value))) params[key] = Number(value);
-          else params[key] = value;
-        }
+        const eqIdx = part.indexOf('=');
+        if (eqIdx <= 0) continue;
+        const key = part.slice(0, eqIdx);
+        const rawVal = part.slice(eqIdx + 1);
+        if (!key) continue;
+        params[key] = parseValue(rawVal);
       }
+      return params;
+    };
+
+    // Case 1: Explicit tool: prefix
+    if (cleaned.startsWith('tool:')) {
+      const [toolPrefix, ...paramParts] = cleaned.split(' ').filter(Boolean);
+      const toolName = normalizeToolName(toolPrefix.substring(5));
+      const params = parseParams(paramParts);
+      return { name: toolName, params };
+    }
+
+    // Case 2: Bare tool command without the 'tool:' prefix: "name k=v ..."
+    // Accept it as a valid tool invocation line.
+    const firstSpace = cleaned.indexOf(' ');
+    const candidateName = firstSpace === -1 ? cleaned : cleaned.slice(0, firstSpace);
+    const rest = firstSpace === -1 ? '' : cleaned.slice(firstSpace + 1).trim();
+
+    // The candidate name must not contain '=' and should start with a letter/underscore
+    if (candidateName && !candidateName.includes('=') && /^[A-Za-z_][A-Za-z0-9_\.]*$/.test(candidateName)) {
+      const toolName = normalizeToolName(candidateName);
+      const paramParts = rest ? rest.split(' ').filter(Boolean) : [];
+      const params = parseParams(paramParts);
       return { name: toolName, params };
     }
 
