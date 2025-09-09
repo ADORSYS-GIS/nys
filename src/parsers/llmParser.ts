@@ -4,6 +4,7 @@ import { getMergedConfig, hasExternalOverride } from '../config/configLoader';
 import { ModelProviderFactory } from '../modelProviders/modelProviderFactory';
 import { getCachedTools } from '../mcp/toolsetCache';
 import { getSemanticToolsetExternal } from '../mcp/toolsetProvider';
+// Semantic memory-based grounding (LangChain-backed via semanticIndexer)
 import { ensureSemanticIndex, semanticSearch } from '../mcp/semanticIndexer';
 
 interface LlmParserOptions {
@@ -80,7 +81,9 @@ export class LlmParser {
     // Use context-aware toggle: only read .nys if a non-empty context was passed in
     let nysContext = '';
     try {
-      if (typeof context === 'string' && context.trim().length > 0) {
+      // Read .nys context whenever context-aware mode is enabled upstream.
+      // We detect that by context being passed (even if empty).
+      if (typeof context !== 'undefined') {
         nysContext = await this.readNysContext();
       }
     } catch {}
@@ -119,45 +122,42 @@ export class LlmParser {
       }
     }
 
-    // Build semantic grounding from vector DB (Milvus or external embedding server)
+    // Build semantic grounding using shared semantic index (LangChain in-memory vector store)
     let combinedContext = nysContext;
     try {
       const cachedTools = await getCachedTools().catch(() => []);
       if (Array.isArray(cachedTools) && cachedTools.length > 0) {
-        try { await ensureSemanticIndex(cachedTools as any); } catch {}
-        try {
-          const hits = await semanticSearch(input, nysContext, 20);
-          if (Array.isArray(hits) && hits.length > 0) {
-            const norm = (s: any) => (typeof s === 'string' ? s : '')
-              .replace(/^github\./, '')
-              .replace(/^_+|_+$/g, '')
-              .toLowerCase();
-            const byName = new Map<string, any>();
-            for (const t of cachedTools as any[]) {
-              const n = norm(t?.name);
-              if (n) byName.set(n, t);
-            }
-            const lines: string[] = [];
-            for (const h of hits) {
-              const id = norm((h as any)?.id || (h as any)?.metadata?.name || '');
-              const tool = byName.get(id);
-              if (tool) {
-                const name = typeof tool.name === 'string' ? tool.name : id;
-                const desc = typeof tool.description === 'string' ? tool.description : '';
-                lines.push(`- ${name}${desc ? `: ${desc}` : ''}`);
-              }
-              if (lines.length >= 20) break;
-            }
-            if (lines.length > 0) {
-              const semanticSection = `Semantic grounding from tool index (top ${lines.length}):\n${lines.join('\n')}`;
-              combinedContext = [nysContext, semanticSection].filter(Boolean).join('\n\n');
-            }
-            console.log(`[SemanticGrounding] hits=${hits.length}, included=${lines.length}, combinedContextChars=${combinedContext.length}`);
-          } else {
-            console.log('[SemanticGrounding] No hits from semanticSearch');
+        await ensureSemanticIndex(cachedTools as any);
+        const hits = await semanticSearch(input, nysContext, 30);
+
+        if (Array.isArray(hits) && hits.length > 0) {
+          const norm = (s: any) => (typeof s === 'string' ? s : '')
+            .replace(/^github\./, '')
+            .replace(/^_+|_+$/g, '')
+            .toLowerCase();
+          const byName = new Map<string, any>();
+          for (const t of cachedTools as any[]) {
+            const n = norm(t?.name);
+            if (n) byName.set(n, t);
           }
-        } catch (e) {
-          console.log('[SemanticGrounding] semanticSearch failed:', e);
+          const lines: string[] = [];
+          for (const h of hits) {
+            const id = norm(h.id || h.metadata?.name || '');
+            const tool = byName.get(id);
+            if (tool) {
+              const name = typeof tool.name === 'string' ? tool.name : id;
+              const desc = typeof tool.description === 'string' ? tool.description : '';
+              lines.push(`- ${name}${desc ? `: ${desc}` : ''}`);
+            }
+            if (lines.length >= 20) break;
+          }
+          if (lines.length > 0) {
+            const semanticSection = `Semantic grounding from tool index (top ${lines.length}):\n${lines.join('\n')}`;
+            combinedContext = [nysContext, semanticSection].filter(Boolean).join('\n\n');
+          }
+          console.log(`[SemanticGrounding] hits=${hits.length}, included=${lines.length}, combinedContextChars=${combinedContext.length}`);
+        } else {
+          console.log('[SemanticGrounding] No hits from semantic index');
         }
       } else {
         console.log('[SemanticGrounding] No cached tools available for grounding');
@@ -246,18 +246,66 @@ export class LlmParser {
 
       console.log('Extracted content from API response:', content.substring(0, 100) + '...');
 
-      // Extract the tool call(s): handle multi-line, NO_TOOL_MATCH, or a single tool
+      // Extract the tool call(s): handle multi-line, JSON arrays/objects, or NO_TOOL_MATCH
       // If empty/invalid, return NO_TOOL_MATCH as string
       if (typeof content === 'string') {
-        const normalized = content.trim();
+        // Strip code fences and markdown wrappers
+        let normalized = content.trim();
+        normalized = normalized.replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
         if (!normalized) {
           return "NO_TOOL_MATCH";
         }
         if (normalized === 'NO_TOOL_MATCH') {
           return "NO_TOOL_MATCH";
         }
-        // Support multi-command LLM responses (one per line)
-        const lines = normalized.split('\n').map(l => l.trim()).filter(Boolean);
+
+        // JSON array/object support for sequential commands
+        if (normalized.startsWith('{') || normalized.startsWith('[')) {
+          try {
+            const parsedJson = JSON.parse(normalized);
+            const toTool = (x: any): ToolCommand | null => {
+              if (!x) return null;
+              if (typeof x === 'string') {
+                return this.parseToolCallFromLlm(x);
+              }
+              const name = typeof x.name === 'string' ? x.name : undefined;
+              const params = (x && typeof x.params === 'object' && x.params) ? x.params : (x.arguments || x.args || undefined);
+              if (name && params && typeof params === 'object') {
+                return { name, params } as ToolCommand;
+              }
+              return null;
+            };
+            const out: ToolCommand[] = [];
+            if (Array.isArray(parsedJson)) {
+              for (const it of parsedJson) {
+                const cmd = toTool(it);
+                if (cmd) out.push(cmd);
+              }
+            } else if (parsedJson && Array.isArray(parsedJson.commands)) {
+              for (const it of parsedJson.commands) {
+                const cmd = toTool(it);
+                if (cmd) out.push(cmd);
+              }
+            } else {
+              const one = toTool(parsedJson);
+              if (one) out.push(one);
+            }
+            if (out.length > 0) {
+              const normName = (s: any) => (typeof s === 'string' ? s : '').replace(/^github\./, '').replace(/^_+|_+$/g, '').toLowerCase();
+              const allow = new Set<string>((Array.isArray(selectedTools) ? selectedTools : []).map((t: any) => normName(t?.name)));
+              const filtered = out.filter(cmd => allow.has(normName(cmd.name)));
+              if (filtered.length > 0) return filtered;
+              return "NO_TOOL_MATCH";
+            }
+          } catch {
+            // fall back to line parsing
+          }
+        }
+
+        // Support multi-command LLM responses (one per line), tolerate numbering/bullets
+        const lines = normalized.split('\n')
+          .map(l => l.replace(/^(\s*\d+[\.)]\s+|\s*[-*+]\s+)/, '').trim())
+          .filter(Boolean);
         const toolCommands: ToolCommand[] = [];
         for (const line of lines) {
           const toolObj = this.parseToolCallFromLlm(line);
@@ -658,34 +706,23 @@ export class LlmParser {
       toolsSection = lines.join('\n');
     }
 
-    return `You are a tool command parser for developer automation.
-Your main job is to convert natural language into structured tool commands for the GitHub MCP Server (https://github.com/github/github-mcp-server).
+    return `You are a tool-command generator. Convert the user's request into grounded, executable tool calls.
+CRITICAL RULES (Anti-hallucination):
+- Use ONLY the tools listed in "Available Tools". Do NOT invent tool names or parameters.
+- Ground your choices STRICTLY on the provided Context and Available Tools. Do NOT assume any facts not present there.
+- If unsure or if no tool fits, output exactly NO_TOOL_MATCH.
+- Tool names must be exact (snake_case). Parameter names/shape must match the listed tools.
 
-Context (.nys directory content from the current project):
+Context (grounding):
 ${extraContext ? `-----\n${extraContext}\n-----\n` : '[No additional context provided]\n'}
 
 Available Tools (selected for this prompt):
 ${toolsSection}
 
-Instructions:
-- Use ONLY the tools listed in "Available Tools" above. Do not invent tool names or parameters.
-- If none of the available tools match the user's request, reply with "NO_TOOL_MATCH".
-- TOOL NAMES are ALWAYS in snake_case (use underscores between words, do not use dots or camelCase), e.g., use "create_repository" not "createRepository".
-- Example: tool:create_repository owner=someuser name=demo_repo
-- If the context describes a GitHub repo/project and the user's request is to "spin up" or setup infrastructure, figure out which tools (and in what sequence) are needed; output one tool call per line, in order.
-- Parameter names and value shapes must match the tools listed above. Prefer booleans (true/false) and numbers where appropriate. Use exact branch/owner/repo strings when specified.
-- If you optionally consult official docs (https://github.com/github/github-mcp-server) to clarify semantics, do NOT introduce tools or params not present in "Available Tools" unless a follow-up discovery step enables them.
-
-When you process a user request:
-- Analyze the prompt (and the context if provided).
-- Respond ONLY with the sequence of structured tool commands, in this format, one command per line:
-  tool:tool_name param1=value1 param2=value2
-
-If the input doesn't specify a valid tool/usage you can find among the available tools, reply with "NO_TOOL_MATCH" and nothing else.
-
-Output rules:
-- Output must only be the formatted tool command(s) (one per line) or NO_TOOL_MATCH, nothing else.
-- Do not include explanations, extra text, or chat summaries.`;
+Response format (strict):
+- If one command: a single line in this format =>  tool:tool_name param1=value1 param2=value2
+- If multiple commands are required, output one command per line in the required sequence (top-to-bottom).
+- Output ONLY the command line(s) or NO_TOOL_MATCH. No explanations, no markdown, no code fences.`;
   }
 
   /**
@@ -699,7 +736,9 @@ Output rules:
     }
 
     // Clean up the response
-    const cleaned = content.trim();
+    let cleaned = content.trim();
+    // Strip optional leading arrow ('=>') used in some formatted outputs
+    cleaned = cleaned.replace(/^\s*=>\s*/, '');
 
     // Check if content is empty after trimming
     if (!cleaned) {
@@ -712,28 +751,65 @@ Output rules:
       return null;
     }
 
-    // Check for tool: format
-    if (cleaned.startsWith('tool:')) {
-      const [toolPrefix, ...paramParts] = cleaned.split(' ');
-      // Remove 'tool:' prefix and sanitize 'github.' or leading/trailing underscores
-      let toolName = toolPrefix.substring(5);
-      if (toolName.startsWith('github.')) {
-        toolName = toolName.substring('github.'.length);
-      }
-      toolName = toolName.replace(/^_+|_+$/g, '');
+    // Helper to normalize tool name (strip github. and underscores)
+    const normalizeToolName = (name: string): string => {
+      let t = name || '';
+      if (t.startsWith('github.')) t = t.substring('github.'.length);
+      return t.replace(/^_+|_+$/g, '');
+    };
 
-      // Parse parameters
+    // Value parser: try JSON (for []/{} or quoted), then boolean/number, else raw string
+    const parseValue = (raw: string): any => {
+      const v = (raw ?? '').trim();
+      if (!v) return v;
+      // If wrapped in quotes, try to JSON parse or strip quotes
+      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+        try { return JSON.parse(v); } catch { return v.slice(1, -1); }
+      }
+      // JSON array/object
+      if ((v.startsWith('[') && v.endsWith(']')) || (v.startsWith('{') && v.endsWith('}'))) {
+        try { return JSON.parse(v); } catch { /* fall-through */ }
+      }
+      if (v === 'true') return true;
+      if (v === 'false') return false;
+      const n = Number(v);
+      if (!isNaN(n) && /^-?\d+(?:\.\d+)?$/.test(v)) return n;
+      return v;
+    };
+
+    // Parse a param string like "k1=v1 k2=v2" into object
+    const parseParams = (paramParts: string[]): Record<string, any> => {
       const params: Record<string, any> = {};
       for (const part of paramParts) {
-        const [key, value] = part.split('=');
-        if (key && value) {
-          // Try to convert numbers and booleans
-          if (value === 'true') params[key] = true;
-          else if (value === 'false') params[key] = false;
-          else if (!isNaN(Number(value))) params[key] = Number(value);
-          else params[key] = value;
-        }
+        const eqIdx = part.indexOf('=');
+        if (eqIdx <= 0) continue;
+        const key = part.slice(0, eqIdx);
+        const rawVal = part.slice(eqIdx + 1);
+        if (!key) continue;
+        params[key] = parseValue(rawVal);
       }
+      return params;
+    };
+
+    // Case 1: Explicit tool: prefix
+    if (cleaned.startsWith('tool:')) {
+      const [toolPrefix, ...paramParts] = cleaned.split(' ').filter(Boolean);
+      const toolName = normalizeToolName(toolPrefix.substring(5));
+      const params = parseParams(paramParts);
+      return { name: toolName, params };
+    }
+
+    // Case 2: Bare tool command without the 'tool:' prefix: "name k=v ..."
+    // Accept it as a valid tool invocation line.
+    const firstSpace = cleaned.indexOf(' ');
+    const candidateName = firstSpace === -1 ? cleaned : cleaned.slice(0, firstSpace);
+    const rest = firstSpace === -1 ? '' : cleaned.slice(firstSpace + 1).trim();
+
+    // The candidate name must not contain '=' and should start with a letter/underscore
+    if (candidateName && !candidateName.includes('=') && /^[A-Za-z_][A-Za-z0-9_\.]*$/.test(candidateName)) {
+      const toolName = normalizeToolName(candidateName);
+      const paramParts = rest ? rest.split(' ').filter(Boolean) : [];
+      const params = parseParams(paramParts);
       return { name: toolName, params };
     }
 

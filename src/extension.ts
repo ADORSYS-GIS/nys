@@ -9,6 +9,49 @@ let mcpClient: McpClient;
 let statusBarManager: StatusBarManager;
 
 export function activate(context: vscode.ExtensionContext) {
+  // Register a minimal WebviewViewProvider for the contributed sidebar view (mcpChat)
+  const provider: vscode.WebviewViewProvider = {
+    resolveWebviewView(webviewView: vscode.WebviewView) {
+      webviewView.webview.options = { enableScripts: true };
+      const openCmd = 'vscode-mcp-client.openChatView';
+      webviewView.webview.html = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webviewView.webview.cspSource} https: data:; script-src 'unsafe-inline' ${webviewView.webview.cspSource}; style-src ${webviewView.webview.cspSource} 'unsafe-inline';" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <style>
+            body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); background: transparent; padding: 12px; }
+            .wrap { display:flex; flex-direction:column; gap:8px; }
+            button { background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
+            button:hover { background: var(--vscode-button-hoverBackground); }
+            .desc { opacity: 0.8; }
+          </style>
+        </head>
+        <body>
+          <div class="wrap">
+            <div class="desc">MCP AI Chat is ready. Use the button below or the command palette to open the full chat panel.</div>
+            <button id="open">Open Chat</button>
+          </div>
+          <script>
+            const vscode = acquireVsCodeApi();
+            document.getElementById('open').addEventListener('click', () => {
+              vscode.postMessage({ command: 'executeCommand', commandId: '${openCmd}' });
+            });
+            window.addEventListener('message', (event) => {});
+          </script>
+        </body>
+        </html>`;
+      // Relay button click back to extension host to execute command
+      webviewView.webview.onDidReceiveMessage((msg) => {
+        if (msg && msg.command === 'executeCommand' && typeof msg.commandId === 'string') {
+          vscode.commands.executeCommand(msg.commandId);
+        }
+      });
+    }
+  };
+  context.subscriptions.push(vscode.window.registerWebviewViewProvider('mcpChat', provider));
   // Log extension configuration for debugging
   const settings = vscode.workspace.getConfiguration('mcpClient');
   const mergedBoot = (getMergedConfig('mcpClient') || {}) as any;
@@ -114,6 +157,18 @@ export function activate(context: vscode.ExtensionContext) {
           try { (mcpClient as any)?.setAuthHeader?.({ Authorization: authHeader }); } catch {}
           try { (mcpClient as any)?.setBearerToken?.(apiKey); } catch {}
           try { (mcpClient as any)?.setHeaders?.({ Authorization: authHeader }); } catch {}
+          // Optional remote headers (toolsets/readonly) for HTTP MCP servers
+          try {
+            const toolsets = String((merged as any).remoteToolsets || '');
+            const readonly = !!(merged as any).remoteReadonly;
+            const extra: any = {};
+            if (toolsets.trim()) extra['X-MCP-Toolsets'] = toolsets.trim();
+            if (readonly) extra['X-MCP-Readonly'] = 'true';
+            if (Object.keys(extra).length > 0) {
+              console.log(`[MCP Connect] Applying remote headers: ${JSON.stringify(extra)}`);
+              try { (mcpClient as any)?.setHeaders?.(extra); } catch {}
+            }
+          } catch {}
           // Fallback env variable in case client implementation reads it
           try { (process as any).env.MCP_AUTH_BEARER = apiKey; } catch {}
         }
@@ -263,7 +318,7 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       // Gather README context only if context-aware toggle is enabled
-      let context = "";
+      let context: string | undefined = undefined;
       const isContextAware = typeof chatView.isContextAware === 'function' ? chatView.isContextAware() : true;
 
       if (isContextAware) {
@@ -280,7 +335,9 @@ export function activate(context: vscode.ExtensionContext) {
             console.warn('[Context] Could not read README.md:', (err as any)?.message || String(err));
           }
         }
-        context = readmeContent;
+        context = readmeContent; // may be empty; signals context-aware mode
+      } else {
+        context = undefined; // signals context-aware disabled
       }
 
       const parseResult = await inputParser.parseInput(userInput, context);

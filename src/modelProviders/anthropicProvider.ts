@@ -58,8 +58,6 @@ export class AnthropicProvider extends BaseModelProvider {
           ]
         }
       ],
-      max_tokens: 1024,
-      temperature: 0.2
     };
   }
 

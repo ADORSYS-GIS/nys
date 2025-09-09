@@ -30,7 +30,7 @@ export class ModelProviderFactory {
 
       case 'openai':
       default:
-        return new OpenAiProvider(modelName || 'gpt-3.5-turbo');
+        return new OpenAiProvider(modelName || 'gpt-5');
     }
   }
 }

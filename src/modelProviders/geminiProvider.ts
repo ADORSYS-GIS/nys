@@ -33,10 +33,10 @@ export class GeminiProvider extends BaseModelProvider {
           ]
         }
       ],
-      generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 1024
-      }
+      // generationConfig: {
+      //   temperature: 0.2,
+      //   maxOutputTokens: 1024
+      // }
     };
   }
 
