@@ -10,7 +10,6 @@
   "engines": {
     "vscode": "^1.60.0"
   },
-  "engineStrict": false,
   "publisher": "Christian237",
   "homepage": "https://github.com/Christiantyemele/mimie.git",
   "bugs": {
@@ -34,7 +33,6 @@
   ],
   "icon": "images/ext.jpeg",
   "main": "./out/extension.js",
-  "browser": "./out/extension.js",
   "contributes": {
     "viewsContainers": {
       "activitybar": [

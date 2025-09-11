@@ -1,19 +1,24 @@
-# VS Code MCP Client (nys)
+# VS Code Coding Assistant (nys)
 
-A Visual Studio Code extension that connects to Model Context Protocol (MCP) servers. It provides an AI Chat panel, executes prompts, lists available tools, and supports both HTTP/WebSocket servers and local stdio binaries.
-
+A Visual Studio Coding Assistant that connects to Model Context Protocol (MCP) servers and External data sources to provide maximum output to user's request. It provides an AI Chat panel, executes prompts, lists available tools, and supports both HTTP/WebSocket servers and local stdio binaries.
+it also has special base prompts, debugging, coding and orchestration workflows build in and provide graph database connection to store relationship in codebase to generate documentations to better assist in daily task 
 <https://github.com/user-attachments/assets/55d831bc-c612-485d-9648-1612c3aa1c6f>
 
 ## Key Features
 
 - Connect to MCP servers
-  - Standard HTTP/WebSocket servers (default)
+  - Standard HTTP/WebSocket servers
   - Stdio mode for local binaries (e.g., GitHub MCP server)
 - AI Chat webview (View: MCP AI Chat → AI Chat)
 - Commands: Connect, Execute Prompt, List Tools, Open Chat View, Disconnect
 - Status bar integration (connection/processing state)
 - Tool discovery cached on connect (no periodic 30‑min refresh)
-- Optional semantic tool selection using external embedding/vector backends (Vector MCP or Milvus)
+- Leverages MCP protocol to perform elicitation reducing hallucination rate
+- Format's user's prompt based on previous chat and project context improving result output
+- Read and work with knowledge and Guidelines from specific directories and files
+- Provide request/response cost
+- Should be capable of rolling back to any code version
+- Langchain Intergration for chat orchestration and memory management
 
 ## Requirements
 
@@ -32,17 +37,15 @@ A Visual Studio Code extension that connects to Model Context Protocol (MCP) ser
 
 ## Quick Start
 
-1) Install
+1.1) Installing from the VS Code Marketplace
+- Search for "nys" in the Extensions view
+- Click Install
+
+1.2) Installing from source
 - From VSIX: Build or download a .vsix, then in VS Code: Extensions → … → Install from VSIX…
 
-2) Configure (Settings → “MCP Client”)
-- mcpClient.serverUrl
-  - Standard HTTP/WS example: http://localhost:8080
-  - Stdio example: /path/to/github-mcp-server (you may pass args; the extension appends "stdio" if missing)
-- mcpClient.apiKey or mcpClient.githubToken
-  - For stdio GitHub MCP server, prefer githubToken. In stdio mode, the extension passes it to GITHUB_PERSONAL_ACCESS_TOKEN/GITHUB_TOKEN.
-- mcpClient.modelProvider and mcpClient.modelName (openai | anthropic | gemini)
-- Optional semantic settings (see Configuration)
+2) Configure (Settings → “nys”)
+
 
 3) Use
 - Command Palette → MCP: Connect to Server
@@ -57,85 +60,7 @@ A Visual Studio Code extension that connects to Model Context Protocol (MCP) ser
 - MCP: Open Chat View (vscode-mcp-client.openChatView)
 
 ## Configuration (summary)
-The extension contributes settings under mcpClient. Common keys:
-- serverUrl: string — URL of MCP server, or path to stdio binary
-- apiKey: string — API key (LLM/MCP token). In stdio mode for GitHub MCP, githubToken is preferred
-- githubToken: string — GitHub Personal Access Token for github-mcp-server
-- modelProvider: openai | anthropic | gemini — provider for LLM-assisted parsing/presentation
-- modelName: string — model identifier (optional)
 
-Semantic selection (optional, for tool ranking):
-- embeddingUrl: string — Embedding MCP endpoint
-- vectorUrl: string — Vector MCP endpoint
-- namespace: string — Namespace for vectors
-- topK: number — Default hits to return
-
-Milvus (optional alternative to Vector MCP):
-- milvusAddress: string — Host (e.g., localhost)
-- milvusPort: number — Port
-- milvusUseSSL: boolean — Use TLS
-- milvusUser/milvusPassword: string — Auth (if enabled)
-- milvusCollectionPrefix: string — Prefix for collections (default tools_)
-
-Behavior notes:
-- Tool catalog is requested and cached on connection; no scheduled refresh. Semantic index rebuilds only when the toolset changes.
-
-## Examples
-
-Standard HTTP/WebSocket server (default mode):
-
-```json
-{
-  "mcpClient.serverUrl": "http://localhost:8080",
-  "mcpClient.apiKey": "YOUR_API_KEY"
-}
-```
-
-Stdio GitHub MCP server (binary or Docker):
-
-```json
-{
-  "mcpClient.serverUrl": "/path/to/github-mcp-server",
-  "mcpClient.githubToken": "YOUR_GITHUB_PAT"
-}
-```
-
-Docker example via stdio:
-
-```json
-{
-  "mcpClient.serverUrl": "docker run --rm -i ghcr.io/github/github-mcp-server",
-  "mcpClient.githubToken": "YOUR_GITHUB_PAT"
-}
-```
-
-## Packaging (build a VSIX)
-
-Prerequisites: Node.js, npm
-
-```bash
-npm install
-# Standard package (no node_modules included)
-npm run package
-# Package without dependencies (explicit)
-npm run package-no-deps
-# Webpack bundle (single-file bundle prior to packaging)
-npm run webpack-bundle
-# Create a full VSIX including dependencies
-npm run create-full-vsix
-# One-step install to VS Code (local) if available on your system
-npm run direct-install
-```
-
-You can also use scripts/simple-build.sh or bundle-and-install.sh if present in your environment.
-
-## Optional: Filesystem Server Helper
-A helper script is provided to run a demo Filesystem MCP server in WebSocket mode:
-
-```bash
-chmod +x ./run-mcp-server.sh
-./run-mcp-server.sh --port 8080 --mode websocket --dir /path/to/project
-```
 
 ## Security & Privacy
 - No telemetry is collected by this extension.
