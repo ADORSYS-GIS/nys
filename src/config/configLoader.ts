@@ -64,9 +64,6 @@ function loadExternalConfig(): AnyRecord {
       path.join(ws, 'configs', 'mimie.config.yaml'),
       path.join(ws, 'configs', 'mimie.config.yml'),
       path.join(ws, 'configs', 'mimie.config.json'),
-      // Workspace root user-level config (commonly used)
-      path.join(ws, 'user.yaml'),
-      path.join(ws, 'user.yml')
     );
   }
 
