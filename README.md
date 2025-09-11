@@ -2,9 +2,7 @@
 
 A Visual Studio Code extension that connects to Model Context Protocol (MCP) servers. It provides an AI Chat panel, executes prompts, lists available tools, and supports both HTTP/WebSocket servers and local stdio binaries.
 
-![Extension icon](images/ext.jpeg)
-
-![Extension icon](images/demo.gif)
+<https://github.com/user-attachments/assets/55d831bc-c612-485d-9648-1612c3aa1c6f>
 
 ## Key Features
 
