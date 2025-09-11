@@ -2,6 +2,7 @@
 
 A Visual Studio Coding Assistant that connects to Model Context Protocol (MCP) servers and External data sources to provide maximum output to user's request. It provides an AI Chat panel, executes prompts, lists available tools, and supports both HTTP/WebSocket servers and local stdio binaries.
 it also has special base prompts, debugging, coding and orchestration workflows build in and provide graph database connection to store relationship in codebase to generate documentations to better assist in daily task 
+<https://github.com/user-attachments/assets/55d831bc-c612-485d-9648-1612c3aa1c6f>
 
 ## Key Features
 
@@ -22,6 +23,17 @@ it also has special base prompts, debugging, coding and orchestration workflows 
 ## Requirements
 
 - Visual Studio Code 1.60.0 or newer
+- Access to an MCP server:
+  - Standard HTTP/WebSocket endpoint, or
+  - A local stdio-compatible binary (e.g., github-mcp-server), or
+  - Optional demo Filesystem server (run-mcp-server.sh)
+- Credentials:
+  - API key for your MCP/LLM service, or
+  - GitHub Personal Access Token when using github-mcp-server
+- Optional for semantic tool selection:
+  - Embedding MCP endpoint and Vector MCP endpoint, or
+  - A reachable Milvus instance
+- For building/packaging from source: Node.js and npm
 
 ## Quick Start
 
