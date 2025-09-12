@@ -1,13 +1,15 @@
 # VS Code Coding Assistant (nys)
 
 A Visual Studio Coding Assistant that connects to Model Context Protocol (MCP) servers and External data sources to provide maximum output to user's request. It provides an AI Chat panel, executes prompts, lists available tools, and supports both HTTP/WebSocket servers and local stdio binaries.
-it also has special base prompts, debugging, coding and orchestration workflows build in and provide graph database connection to store relationship in codebase to generate documentations to better assist in daily task 
+it also has special base prompts, debugging, coding and orchestration workflows build in and provide graph database connection to store relationship in codebase to generate documentations to better assist in daily task
+
 <https://github.com/user-attachments/assets/55d831bc-c612-485d-9648-1612c3aa1c6f>
 
 ## Architecture worflow
 ![Architecture](/images/workflow.png)
 
 https://drive.google.com/file/d/1PIz6mFjYTbwbW5r_Db3CTl7WIQBAVjfp/view?usp=sharing
+
 ## Key Features
 
 - Connect to MCP servers
