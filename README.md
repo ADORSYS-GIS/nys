@@ -4,6 +4,10 @@ A Visual Studio Coding Assistant that connects to Model Context Protocol (MCP) s
 it also has special base prompts, debugging, coding and orchestration workflows build in and provide graph database connection to store relationship in codebase to generate documentations to better assist in daily task 
 <https://github.com/user-attachments/assets/55d831bc-c612-485d-9648-1612c3aa1c6f>
 
+## Architecture worflow
+![Architecture](/images/workflow.png)
+
+https://drive.google.com/file/d/1PIz6mFjYTbwbW5r_Db3CTl7WIQBAVjfp/view?usp=sharing
 ## Key Features
 
 - Connect to MCP servers
@@ -20,6 +24,22 @@ it also has special base prompts, debugging, coding and orchestration workflows 
 - Should be capable of rolling back to any code version
 - Langchain Intergration for chat orchestration and memory management
 
+## Mira Architecture Overview
+
+The Mira extension is architected for modular, persistent, and orchestrated AI workflows in VS Code.
+
+- **LangChain Orchestration:**
+  Mira leverages LangChain for advanced prompt orchestration, memory management, and tool chaining. This enables context-aware, multi-step workflows and dynamic tool selection based on user intent.
+
+- **Sidebar Workflows:**
+  The extension provides a sidebar with interactive panels for chat, tool selection, and workflow management. Users can trigger, monitor, and manage AI-driven tasks directly from the sidebar.
+
+- **Persistent State in `.nys/`:**
+  All persistent state, including chat history, workflow state, and user preferences, is stored in the `.nys/` directory at the workspace root. This ensures session continuity and enables advanced features like context recall and workflow resumption.
+
+- **Extensible Model Providers:**
+  Mira supports multiple model providers (OpenAI, Gemini, Anthropic, etc.) and can orchestrate between them as needed.
+
 ## Requirements
 
 - Visual Studio Code 1.60.0 or newer
@@ -34,6 +54,19 @@ it also has special base prompts, debugging, coding and orchestration workflows 
   - Embedding MCP endpoint and Vector MCP endpoint, or
   - A reachable Milvus instance
 - For building/packaging from source: Node.js and npm
+
+## Build & Package
+
+To build and package the extension (including all persistent state in `.nys/`):
+
+```bash
+npm run compile
+npx vsce package
+```
+
+- The build/package scripts ensure `.nys/` is always included in the VSIX.
+- You can also use `scripts/bundle-extension.js` or `scripts/generate-vsix.sh` for advanced packaging.
+- After packaging, install the VSIX in VS Code via Extensions → ... → Install from VSIX.
 
 ## Quick Start
 
