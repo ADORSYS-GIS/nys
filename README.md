@@ -5,6 +5,8 @@ it also has special base prompts, debugging, coding and orchestration workflows 
 
 <https://github.com/user-attachments/assets/55d831bc-c612-485d-9648-1612c3aa1c6f>
 
+## Architecture
+
 ## Key Features
 
 - Connect to MCP servers
