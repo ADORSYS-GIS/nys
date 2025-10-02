@@ -27,12 +27,23 @@ User Prompt
 │ │                 │    │   prompt        │    │   detailed      │              │
 │ │                 │    │ - Extract       │    │   requirements  │              │
 │ │                 │    │   features      │    │ - Create        │              │
+| |                 |    | - use availale  |    |                 |              |
+| |                 |    |   tools         |    |                 |              |
+| |                 |    |   and datasource|    |                 |              |
+| |                 |    |  to read to read|    |                 |              |
+| |                 |    |      the current|    |                 |              |
+| |                 |    |      project    |    |                 |              |
+| |                 |    |      structure  |    |                 |              |
+| |                 |    | - build from    |    |                 |              |
+| |                 |    | scratch or      |    |                 |              |
+| |                 |    | continue editing|    |                 |              |
+| |                 |    | requirement depe|    |                 |              |
+| |                 |    | ding on prompt  |    |                 |              |
 │ │                 │    │ - Assess        │    │   technical     │              │
 │ │                 │    │   complexity    │    │   specs         │              │
-│ │                 │    │ - Determine     │    │ - Define        │              │
-│ │                 │    │   technologies  │    │   timeline      │              │
+│ │                 │    │ - Determine     │    │                 │
 │ └─────────────────┘    └─────────────────┘    └─────────────────┘              │
-│                                                                                 │
+│                                                                                │
 │ ┌─────────────────┐    ┌─────────────────┐                                     │
 │ │ File Write      │ <- │ End Node        │                                     │
 │ │ Node            │    │                 │                                     │
@@ -41,9 +52,9 @@ User Prompt
 │ │   requirements  │    │ - Return        │                                     │
 │ │   to issue      │    │   results       │                                     │
 │ │   file          │    │                 │                                     │
-│ │ - Update        │    │                 │                                     │
-│ │   issue         │    │                 │                                     │
-│ │   status        │    │                 │                                     │
+│ │                 │    │                 │                                     │
+│ │                 │    │                 │                                     │
+│ │                 │    │                 │                                     │
 │ └─────────────────┘    └─────────────────┘                                     │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -68,7 +79,7 @@ Switch to Build Mode
 │ │                 │    │ - Parse         │    │   code          │              │
 │ │                 │    │   technical     │    │ - Create        │              │
 │ │                 │    │   specs         │    │   project       │              │
-│ │                 │    │ - Extract       │    │   structure     │              │
+│ │                 │    │ - Extract       │    │   structure(if neccessary)     │              │
 │ │                 │    │   features      │    │ - Implement     │              │
 │ │                 │    │                 │    │   features      │              │
 │ └─────────────────┘    └─────────────────┘    └─────────────────┘              │
@@ -108,7 +119,8 @@ Switch to Debug Mode
 │ │                 │    │ - Analyze       │    │ - Create        │              │
 │ │                 │    │   errors        │    │   improved      │              │
 │ │                 │    │ - Check         │    │   code          │              │
-│ │                 │    │   performance   │    │ - Optimize      │              │
+│ │                 │    │   performance   │    │ - summarized fixes      │              │
+| |                 |    |                 |    | and next steps  |              |         
 │ └─────────────────┘    └─────────────────┘    └─────────────────┘              │
 │                                                                                 │
 │ ┌─────────────────┐    ┌─────────────────┐                                     │
@@ -131,7 +143,7 @@ Switch to Debug Mode
 │ Available Tools & MCP Servers                                                   │
 │                                                                                 │
 │ ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐              │
-│ │ Built-in Tools  │    │ MCP Servers     │    │ File System     │              │
+│ │ Tools           │    │ MCP Servers     │    │ File System     │              │
 │ │                 │    │                 │    │ Operations      │              │
 │ │ - Calculator    │    │ - HTTP APIs     │    │                 │              │
 │ │ - Web Search    │    │ - WebSocket     │    │ - Read files    │              │
