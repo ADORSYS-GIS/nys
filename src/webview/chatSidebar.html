@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mira Sidebar Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --sidebar-bg: #1e1e1e;
+      --sidebar-fg: #e0e0e0;
+      --sidebar-accent: #3a8ee6;
+      --sidebar-accent-hover: #60aaff;
+      --sidebar-border: #282828;
+      --sidebar-secondary: #23272e;
+      --sidebar-bubble-user: #2d3a4a;
+      --sidebar-bubble-assistant: #23272e;
+      --sidebar-bubble-user-fg: #e0e0e0;
+      --sidebar-bubble-assistant-fg: #b0c4de;
+      --sidebar-disabled: #444;
+      --sidebar-scrollbar: #333;
+      --sidebar-scrollbar-thumb: #444;
+      --sidebar-history-bg: #181a1b;
+      --sidebar-history-active: #3a8ee6;
+      --sidebar-history-fg: #e0e0e0;
+      --sidebar-history-active-fg: #fff;
+      --sidebar-topbar-height: 44px;
+      --sidebar-composer-height: 64px;
+      --sidebar-font: 'Segoe UI', 'Liberation Sans', Arial, sans-serif;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: var(--sidebar-bg);
+      color: var(--sidebar-fg);
+      font-family: var(--sidebar-font);
+      font-size: 14px;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    #sidebar-root {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+      min-width: 320px;
+      min-height: 480px;
+      background: var(--sidebar-bg);
+    }
+    /* Topbar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: var(--sidebar-topbar-height);
+      padding: 0 12px;
+      background: var(--sidebar-secondary);
+      border-bottom: 1px solid var(--sidebar-border);
+      flex-shrink: 0;
+    }
+    .topbar .btn {
+      background: none;
+      border: none;
+      color: var(--sidebar-accent);
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+    .topbar .btn:hover {
+      background: var(--sidebar-accent-hover);
+      color: #fff;
+    }
+    .topbar .settings {
+      font-size: 18px;
+      padding: 6px 10px;
+    }
+    /* Main region */
+    .main-region {
+      display: flex;
+      flex: 1 1 auto;
+      min-height: 0;
+      background: var(--sidebar-bg);
+      overflow: hidden;
+    }
+    .history-list {
+      width: 120px;
+      background: var(--sidebar-history-bg);
+      border-right: 1px solid var(--sidebar-border);
+      overflow-y: auto;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+      scrollbar-color: var(--sidebar-scrollbar-thumb) var(--sidebar-scrollbar);
+      scrollbar-width: thin;
+    }
+    .history-list li {
+      padding: 10px 8px;
+      cursor: pointer;
+      color: var(--sidebar-history-fg);
+      border-left: 3px solid transparent;
+      transition: background 0.12s, border-color 0.12s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 13px;
+    }
+    .history-list li.active {
+      background: var(--sidebar-history-active);
+      color: var(--sidebar-history-active-fg);
+      border-left: 3px solid var(--sidebar-accent);
+    }
+    .history-list li:hover:not(.active) {
+      background: #23272e;
+    }
+    .chat-pane {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--sidebar-bg);
+    }
+    .chat-messages {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding: 16px 18px 8px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scrollbar-color: var(--sidebar-scrollbar-thumb) var(--sidebar-scrollbar);
+      scrollbar-width: thin;
+    }
+    .chat-message {
+      max-width: 90%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      word-break: break-word;
+      font-size: 14px;
+      line-height: 1.5;
+      box-shadow: 0 1px 2px #0002;
+      margin-bottom: 2px;
+      position: relative;
+      display: inline-block;
+    }
+    .chat-message.user {
+      align-self: flex-end;
+      background: var(--sidebar-bubble-user);
+      color: var(--sidebar-bubble-user-fg);
+      border-bottom-right-radius: 4px;
+    }
+    .chat-message.assistant {
+      align-self: flex-start;
+      background: var(--sidebar-bubble-assistant);
+      color: var(--sidebar-bubble-assistant-fg);
+      border-bottom-left-radius: 4px;
+    }
+    .chat-message .meta {
+      font-size: 11px;
+      color: #888;
+      margin-top: 2px;
+      text-align: right;
+    }
+    /* Composer */
+    .composer {
+      display: flex;
+      flex-direction: column;
+      background: var(--sidebar-secondary);
+      border-top: 1px solid var(--sidebar-border);
+      padding: 8px 10px 6px 10px;
+      flex-shrink: 0;
+      min-height: var(--sidebar-composer-height);
+    }
+    .composer-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .composer-row:last-child {
+      margin-bottom: 0;
+    }
+    .composer .file-ref {
+      background: #23272e;
+      color: #b0c4de;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 12px;
+      margin-right: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .composer .file-ref .remove-file {
+      color: #e57373;
+      cursor: pointer;
+      font-size: 13px;
+      margin-left: 4px;
+    }
+    .composer .select, .composer .toggle, .composer .input {
+      background: #23272e;
+      color: var(--sidebar-fg);
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 13px;
+      margin-right: 4px;
+      outline: none;
+      transition: border 0.15s;
+    }
+    .composer .select:focus, .composer .input:focus {
+      border: 1.5px solid var(--sidebar-accent);
+    }
+    .composer .toggle {
+      cursor: pointer;
+      font-weight: 600;
+      min-width: 32px;
+      text-align: center;
+      background: #23272e;
+      color: var(--sidebar-accent);
+      border: 1.5px solid var(--sidebar-accent);
+      transition: background 0.15s, color 0.15s;
+    }
+    .composer .toggle.active {
+      background: var(--sidebar-accent);
+      color: #fff;
+    }
+    .composer .input {
+      flex: 1 1 auto;
+      min-width: 0;
+      resize: none;
+      height: 32px;
+      line-height: 1.4;
+    }
+    .composer .send-btn {
+      background: var(--sidebar-accent);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 16px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-left: 4px;
+    }
+    .composer .send-btn:disabled {
+      background: var(--sidebar-disabled);
+      color: #aaa;
+      cursor: not-allowed;
+    }
+    .composer .feedback-link {
+      color: #b0c4de;
+      font-size: 12px;
+      text-decoration: underline;
+      cursor: pointer;
+      margin-left: auto;
+      margin-top: 2px;
+      opacity: 0.8;
+      transition: color 0.15s;
+    }
+    .composer .feedback-link:hover {
+      color: var(--sidebar-accent-hover);
+      opacity: 1;
+    }
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      background: var(--sidebar-scrollbar);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--sidebar-scrollbar-thumb);
+      border-radius: 4px;
+    }
+    /* Responsive */
+    @media (max-width: 480px) {
+      .history-list { width: 80px; }
+      .composer .send-btn { padding: 6px 8px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar-root">
+    <!-- Topbar -->
+    <div class="topbar">
+      <button class="btn new-chat" title="Start a new chat">+ New Chat</button>
+      <span style="flex:1"></span>
+      <button class="btn settings" title="Settings">&#9881;</button>
+    </div>
+    <!-- Main region -->
+    <div class="main-region">
+      <!-- History List -->
+      <ul class="history-list" id="historyList"></ul>
+      <!-- Chat Pane -->
+      <div class="chat-pane">
+        <div class="chat-messages" id="chatMessages"></div>
+      </div>
+    </div>
+    <!-- Composer -->
+    <div class="composer">
+      <div class="composer-row" id="fileRefRow" style="display:none;">
+        <span class="file-ref" id="fileRef">
+          <span id="fileRefName"></span>
+          <span class="remove-file" title="Remove file">&times;</span>
+        </span>
+      </div>
+      <div class="composer-row">
+        <select class="select" id="modelSelect" title="Select model">
+          <option value="gpt-4">GPT-4</option>
+          <option value="gpt-3.5">GPT-3.5</option>
+          <option value="claude-3">Claude 3</option>
+        </select>
+        <select class="select" id="roleSelect" title="Select role">
+          <option value="user">User</option>
+          <option value="assistant">Assistant</option>
+          <option value="system">System</option>
+        </select>
+        <button class="toggle" id="cmdToggle" title="Enable tool commands">Cmd</button>
+        <button class="toggle" id="termToggle" title="Enable terminal session">Term</button>
+        <input class="input" id="messageInput" type="text" placeholder="Type a message..." maxlength="2000" autocomplete="off" />
+        <button class="send-btn" id="sendBtn" disabled>Send</button>
+      </div>
+      <div class="composer-row">
+        <button class="btn" id="attachFileBtn" style="font-size:12px;">Attach File</button>
+        <span class="feedback-link" id="feedbackLink">Feedback</span>
+      </div>
+    </div>
+  </div>
+  <input type="file" id="fileInput" style="display:none;" />
+  <script>
+    // UI State
+    let chatSessions = [
+      { id: 1, name: "Chat 1", messages: [
+        { id: 1, role: "assistant", content: "Welcome to Mira Sidebar Chat!" }
+      ] }
+    ];
+    let currentSessionId = 1;
+    let fileRef = null;
+    let cmdEnabled = false;
+    let termEnabled = false;
+
+    // DOM Elements
+    const historyList = document.getElementById('historyList');
+    const chatMessages = document.getElementById('chatMessages');
+    const modelSelect = document.getElementById('modelSelect');
+    const roleSelect = document.getElementById('roleSelect');
+    const cmdToggle = document.getElementById('cmdToggle');
+    const termToggle = document.getElementById('termToggle');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const attachFileBtn = document.getElementById('attachFileBtn');
+    const fileInput = document.getElementById('fileInput');
+    const fileRefRow = document.getElementById('fileRefRow');
+    const fileRefName = document.getElementById('fileRefName');
+    const removeFileBtn = fileRefRow.querySelector('.remove-file');
+    const feedbackLink = document.getElementById('feedbackLink');
+
+    // Render Functions
+    function renderHistory() {
+      historyList.innerHTML = '';
+      let items = chatSessions.slice(-50);
+      for (let session of items) {
+        const li = document.createElement('li');
+        li.textContent = session.name;
+        li.className = (session.id === currentSessionId) ? 'active' : '';
+        li.onclick = () => selectSession(session.id);
+        historyList.appendChild(li);
+      }
+    }
+    function renderMessages() {
+      chatMessages.innerHTML = '';
+      const session = chatSessions.find(s => s.id === currentSessionId);
+      if (!session) return;
+      for (let msg of session.messages) {
+        const div = document.createElement('div');
+        div.className = 'chat-message ' + (msg.role === 'user' ? 'user' : 'assistant');
+        div.innerHTML = escapeHtml(msg.content);
+        chatMessages.appendChild(div);
+      }
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    function renderFileRef() {
+      if (fileRef) {
+        fileRefRow.style.display = '';
+        fileRefName.textContent = fileRef.name;
+      } else {
+        fileRefRow.style.display = 'none';
+        fileRefName.textContent = '';
+      }
+    }
+    function updateSendBtn() {
+      sendBtn.disabled = !messageInput.value.trim();
+    }
+    // Event Handlers
+    function selectSession(id) {
+      currentSessionId = id;
+      renderHistory();
+      renderMessages();
+    }
+    function addSession() {
+      const newId = Date.now();
+      const name = "Chat " + (chatSessions.length + 1);
+      chatSessions.push({ id: newId, name, messages: [] });
+      if (chatSessions.length > 50) chatSessions = chatSessions.slice(-50);
+      currentSessionId = newId;
+      renderHistory();
+      renderMessages();
+    }
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+      const session = chatSessions.find(s => s.id === currentSessionId);
+      if (!session) return;
+      session.messages.push({ id: Date.now(), role: roleSelect.value, content: text });
+      messageInput.value = '';
+      updateSendBtn();
+      renderMessages();
+      // Simulate assistant reply (UI only)
+      setTimeout(() => {
+        session.messages.push({ id: Date.now(), role: 'assistant', content: '...' });
+        renderMessages();
+      }, 600);
+      // Post message to extension (ready for backend)
+      vscodePost({ type: 'sendMessage', text, model: modelSelect.value, role: roleSelect.value, cmd: cmdEnabled, term: termEnabled, file: fileRef });
+    }
+    function toggleCmd() {
+      cmdEnabled = !cmdEnabled;
+      cmdToggle.classList.toggle('active', cmdEnabled);
+      vscodePost({ type: 'toggleCommand', enabled: cmdEnabled });
+    }
+    function toggleTerm() {
+      termEnabled = !termEnabled;
+      termToggle.classList.toggle('active', termEnabled);
+      vscodePost({ type: 'toggleTerminal', enabled: termEnabled });
+    }
+    function attachFile() {
+      fileInput.value = '';
+      fileInput.click();
+    }
+    function handleFileInput(e) {
+      const file = e.target.files[0];
+      if (file) {
+        fileRef = { name: file.name, size: file.size };
+        renderFileRef();
+        vscodePost({ type: 'attachFile', file: { name: file.name, size: file.size } });
+      }
+    }
+    function removeFile() {
+      fileRef = null;
+      renderFileRef();
+      vscodePost({ type: 'removeFile' });
+    }
+    function handleModelChange() {
+      vscodePost({ type: 'selectModel', model: modelSelect.value });
+    }
+    function handleRoleChange() {
+      vscodePost({ type: 'selectRole', role: roleSelect.value });
+    }
+    function handleFeedback() {
+      vscodePost({ type: 'feedback' });
+      window.open('https://github.com/your-repo/feedback', '_blank');
+    }
+    // VS Code API bridge
+    function vscodePost(msg) {
+      if (window.acquireVsCodeApi) {
+        window.acquireVsCodeApi().postMessage(msg);
+      }
+    }
+    // Utility
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, function(m) {
+        return ({
+          '&': '&',
+          '<': '<',
+          '>': '>',
+          '"': '"',
+          "'": '''
+        })[m];
+      });
+    }
+    // Init
+    renderHistory();
+    renderMessages();
+    renderFileRef();
+    updateSendBtn();
+
+    // Event Listeners
+    document.querySelector('.new-chat').onclick = addSession;
+    document.querySelector('.settings').onclick = () => vscodePost({ type: 'settings' });
+    messageInput.oninput = updateSendBtn;
+    messageInput.onkeydown = (e) => {
+      if (e.key === 'Enter' && !e.shiftKey && !sendBtn.disabled) {
+        e.preventDefault();
+        sendMessage();
+      }
+    };
+    sendBtn.onclick = sendMessage;
+    cmdToggle.onclick = toggleCmd;
+    termToggle.onclick = toggleTerm;
+    attachFileBtn.onclick = attachFile;
+    fileInput.onchange = handleFileInput;
+    removeFileBtn.onclick = removeFile;
+    modelSelect.onchange = handleModelChange;
+    roleSelect.onchange = handleRoleChange;
+    feedbackLink.onclick = handleFeedback;
+
+    // Listen for messages from extension (UI only, no backend logic)
+    window.addEventListener('message', event => {
+      // Placeholder for future backend integration
+    });
+  </script>
+</body>
+</html>

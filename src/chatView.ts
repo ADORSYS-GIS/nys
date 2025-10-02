@@ -50,6 +50,9 @@ export class ChatView {
         if (message.command === 'sendMessage' && this.sendMessageCallback) {
           this.addMessage('user', message.text);
           this.sendMessageCallback(message.text);
+        } else if (message.command === 'restart') {
+          // Trigger extension restart (same as Enhanced Chat View)
+          vscode.commands.executeCommand('vscode-mcp-client.restartExtension');
         }
       });
 
@@ -292,6 +295,12 @@ export class ChatView {
             <div class="input-container">
                 <textarea id="message-input" placeholder="Type your message..." rows="2"></textarea>
                 <button id="send-button">Send</button>
+                <button id="restart-button" style="margin-left:8px;background-color:transparent;color:var(--vscode-descriptionForeground);border:none;padding:4px 8px;font-size:12px;cursor:pointer;display:flex;align-items:center;">
+                    <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor" style="width:14px;height:14px;margin-right:4px;">
+                        <path d="M8 3V1l-4 3.5L8 8V6c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5h1.5c0 1.93 1.57 3.5 3.5 3.5s3.5-1.57 3.5-3.5S9.93 6.5 8 6.5V3z"/>
+                    </svg>
+                    Restart
+                </button>
                 <div class="spinner" id="spinner"></div>
             </div>
         </div>
@@ -302,6 +311,7 @@ export class ChatView {
             const messageInput = document.getElementById('message-input');
             const sendButton = document.getElementById('send-button');
             const spinner = document.getElementById('spinner');
+            const restartButton = document.getElementById('restart-button');
 
             // Scroll to bottom
             function scrollToBottom() {
@@ -338,6 +348,13 @@ export class ChatView {
 
             // Send message when clicking the send button
             sendButton.addEventListener('click', sendMessage);
+
+            // Restart button
+            restartButton.addEventListener('click', () => {
+                vscode.postMessage({
+                    command: 'restart'
+                });
+            });
 
             // Send message when pressing Enter (Shift+Enter for new line)
             messageInput.addEventListener('keydown', (event) => {

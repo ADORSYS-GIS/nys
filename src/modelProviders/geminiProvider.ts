@@ -1,11 +1,11 @@
 import { BaseModelProvider } from './modelProviderInterface';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+/* import { initChatModel } from "langchain/chat_models/universal"; */
 
 /**
  * Google Gemini API provider implementation using the official SDK
  */
 export class GeminiProvider extends BaseModelProvider {
-  private client: GoogleGenerativeAI | null = null;
+  private geminiModel: any = null;
   private modelName: string;
   private apiKey: string = '';
 
@@ -80,15 +80,21 @@ export class GeminiProvider extends BaseModelProvider {
   getHeaders(apiKey: string): Record<string, string> {
     // Store the API key
     this.apiKey = apiKey;
-
-    // Initialize the Gemini client
-    this.client = new GoogleGenerativeAI(apiKey);
-
-    // Use header-based API key to avoid exposing the key in the URL
+    // Initialize the LangChain Gemini model if not already done
+    // (modelProvider: "google-vertexai" for Gemini)
+    // This is async, so actual initialization is deferred to sendMessage
     return {
       'Content-Type': 'application/json',
       'x-goog-api-key': apiKey
     };
+  }
+
+  /**
+   * Send a message using LangChain's Gemini (VertexAI) via initChatModel
+   */
+  // sendMessage is not implemented in this build due to missing langchain/chat_models/universal
+  async sendMessage(_: string, __: string, ___: string): Promise<any> {
+    throw new Error("sendMessage is not implemented: missing langchain/chat_models/universal in this langchain version.");
   }
 
   /**

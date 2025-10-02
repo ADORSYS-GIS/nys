@@ -75,6 +75,9 @@ export class EnhancedChatView {
           case 'clearChat':
             this.clearMessages();
             break;
+          case 'restart':
+            vscode.commands.executeCommand('vscode-mcp-client.restartExtension');
+            break;
         }
       });
 
@@ -558,6 +561,12 @@ export class EnhancedChatView {
                             </svg>
                             Connect
                         </button>
+                        <button class="action-button" id="restart-button">
+                            <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                                <path d="M8 3V1l-4 3.5L8 8V6c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5h1.5c0 1.93 1.57 3.5 3.5 3.5s3.5-1.57 3.5-3.5S9.93 6.5 8 6.5V3z"/>
+                            </svg>
+                            Restart
+                        </button>
                     </div>
                 </div>
             </div>
@@ -575,6 +584,7 @@ export class EnhancedChatView {
             const clearChatButton = document.getElementById('clear-chat-button');
             const listToolsButton = document.getElementById('list-tools-button');
             const connectButton = document.getElementById('connect-button');
+            const restartButton = document.getElementById('restart-button');
 
             // Scroll to bottom
             function scrollToBottom() {
@@ -659,6 +669,13 @@ export class EnhancedChatView {
 
             // Send message when clicking the send button
             sendButton.addEventListener('click', sendMessage);
+
+            // Restart button
+            restartButton.addEventListener('click', () => {
+                vscode.postMessage({
+                    command: 'restart'
+                });
+            });
 
             // Send message when pressing Enter (Shift+Enter for new line)
             messageInput.addEventListener('keydown', (event) => {

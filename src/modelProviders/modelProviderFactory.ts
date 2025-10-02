@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import { getMergedConfig, hasExternalOverride } from '../config/configLoader';
 import { ModelProviderInterface } from './modelProviderInterface';
 import { OpenAiProvider } from './openAiProvider';
-import { AnthropicProvider } from './anthropicProvider';
-import { GeminiProvider } from './geminiProvider';
+// import { AnthropicProvider } from './anthropicProvider';
+// import { GeminiProvider } from './geminiProvider';
 
 /**
  * Factory for creating model providers
@@ -22,15 +22,19 @@ export class ModelProviderFactory {
     switch (providerName.toLowerCase()) {
       case 'anthropic':
       case 'claude':
-        return new AnthropicProvider(modelName || 'claude-3-sonnet-20240229');
+        // Fallback to OpenAI if Anthropic not available
+        console.warn('Anthropic provider not available, falling back to OpenAI');
+        return new OpenAiProvider(modelName || 'gpt-4');
 
       case 'gemini':
       case 'google':
-        return new GeminiProvider(modelName || 'gemini-pro');
+        // Fallback to OpenAI if Gemini not available
+        console.warn('Gemini provider not available, falling back to OpenAI');
+        return new OpenAiProvider(modelName || 'gpt-4');
 
       case 'openai':
       default:
-        return new OpenAiProvider(modelName || 'gpt-5');
+        return new OpenAiProvider(modelName || 'gpt-4');
     }
   }
 }

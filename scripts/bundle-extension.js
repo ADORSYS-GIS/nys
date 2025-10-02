@@ -44,12 +44,30 @@ try {
   // Create a new .vscodeignore that doesn't exclude node_modules
   const newVscodeignore = vscodeignoreContent
     .split('\n')
-    .filter(line => !line.includes('node_modules'))
+    // Remove any lines that might exclude node_modules or .nys/
+    .filter(line => !line.includes('node_modules') && !line.match(/(^|\/)\.nys(\/|\*|$)/))
     .join('\n');
-
-  // Add rules to include only needed node_modules
-  const finalVscodeignore = `${newVscodeignore}\n\n# Include only needed dependencies\nnode_modules/**\n!node_modules/ws/**\n!node_modules/axios/**\n!node_modules/buffer-from/**\n!node_modules/event-target-shim/**\n!node_modules/follow-redirects/**\n!node_modules/proxy-from-env/**\n!node_modules/form-data/**\n!node_modules/asynckit/**\n!node_modules/combined-stream/**\n!node_modules/mime-types/**\n!node_modules/mime-db/**\n!node_modules/delayed-stream/**\n`;
-
+  
+  // Add rules to include only needed node_modules and always include .nys/
+  const finalVscodeignore = `${newVscodeignore}
+  # Always include persistent state directory
+  !.nys/**
+  # Include only needed dependencies
+  node_modules/**
+  !node_modules/ws/**
+  !node_modules/axios/**
+  !node_modules/buffer-from/**
+  !node_modules/event-target-shim/**
+  !node_modules/follow-redirects/**
+  !node_modules/proxy-from-env/**
+  !node_modules/form-data/**
+  !node_modules/asynckit/**
+  !node_modules/combined-stream/**
+  !node_modules/mime-types/**
+  !node_modules/mime-db/**
+  !node_modules/delayed-stream/**
+  `;
+  
   fs.writeFileSync(vscodeignorePath, finalVscodeignore);
   console.log('✅ .vscodeignore updated!\n');
 

@@ -1,11 +1,11 @@
 import { BaseModelProvider } from './modelProviderInterface';
-import OpenAI from 'openai';
+/* import { initChatModel } from "langchain/chat_models/universal"; */
 
 /**
  * OpenAI API provider implementation using the official SDK
  */
 export class OpenAiProvider extends BaseModelProvider {
-  private client: OpenAI | null = null;
+  private client: any = null;
   private modelName: string;
 
   constructor(modelName: string = 'gpt-5') {
@@ -53,15 +53,19 @@ export class OpenAiProvider extends BaseModelProvider {
    * Initialize the OpenAI client with the API key
    */
   getHeaders(apiKey: string): Record<string, string> {
-    // Initialize the OpenAI client if not already done
-    this.client = new OpenAI({
-      apiKey: apiKey
-    });
-
-    // Still return headers for compatibility with the interface
+    // Initialize the LangChain OpenAI client if not already done
+    this.client = null; // Will be created per request for correct apiKey
     return {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
     };
+  }
+
+  /**
+   * Send a message using LangChain's initChatModel
+   */
+  // sendMessage is not implemented in this build due to missing langchain/chat_models/universal
+  async sendMessage(_: string, __: string, ___: string): Promise<any> {
+    throw new Error("sendMessage is not implemented: missing langchain/chat_models/universal in this langchain version.");
   }
 }

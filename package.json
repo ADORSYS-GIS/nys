@@ -1,8 +1,8 @@
 {
   "name": "nys",
-  "displayName": "nys",
-  "description": "MCP Client extension for VS Code",
-  "version": "5.5.6",
+  "displayName": "Mira",
+  "description": "AI-powered development assistant with issue-driven workflow",
+  "version": "6.5.6",
   "repository": {
     "type": "git",
     "url": "https://github.com/Christiantyemele/mimie.git"
@@ -16,20 +16,17 @@
     "url": "https://github.com/Christiantyemele/mimie.git"
   },
   "keywords": [
-    "mcp",
-    "client",
     "ai",
-    "websocket"
+    "assistant",
+    "development",
+    "issues",
+    "workflow"
   ],
   "categories": [
     "Other"
   ],
   "activationEvents": [
-    "onCommand:vscode-mcp-client.connect",
-    "onCommand:vscode-mcp-client.executePrompt",
-    "onCommand:vscode-mcp-client.disconnect",
-    "onCommand:vscode-mcp-client.listTools",
-    "onView:mcpChat"
+    "onView:miraSidebarChat.issueView"
   ],
   "icon": "images/ext.jpeg",
   "main": "./out/extension.js",
@@ -37,206 +34,162 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "mcp-client",
-          "title": "MCP AI Chat",
+          "id": "mira-sidebar",
+          "title": "Mira",
           "icon": "images/mcp.svg"
         }
       ]
     },
     "views": {
-      "mcp-client": [
+      "mira-sidebar": [
         {
-          "id": "mcpChat",
-          "name": "AI Chat",
+          "id": "miraSidebarChat.issueView",
+          "name": "Issues",
           "type": "webview"
         }
       ]
     },
     "commands": [
       {
-        "command": "vscode-mcp-client.connect",
-        "title": "MCP: Connect to Server"
+        "command": "vscode-mcp-client.openIssuePanel",
+        "title": "Mira: Open Issue Manager"
       },
       {
-        "command": "vscode-mcp-client.disconnect",
-        "title": "MCP: Disconnect"
+        "command": "vscode-mcp-client.createIssue",
+        "title": "Mira: Create New Issue"
       },
       {
-        "command": "vscode-mcp-client.executePrompt",
-        "title": "MCP: Execute Prompt"
+        "command": "vscode-mcp-client.switchToDesignMode",
+        "title": "Mira: Switch to Design Mode"
       },
       {
-        "command": "vscode-mcp-client.listTools",
-        "title": "MCP: List Available Tools"
+        "command": "vscode-mcp-client.switchToBuildMode",
+        "title": "Mira: Switch to Build Mode"
       },
       {
-        "command": "vscode-mcp-client.openChatView",
-        "title": "MCP: Open Chat View"
+        "command": "vscode-mcp-client.switchToDebugMode",
+        "title": "Mira: Switch to Debug Mode"
+      },
+      {
+        "command": "vscode-mcp-client.runBuild",
+        "title": "Mira: Run Build"
+      },
+      {
+        "command": "vscode-mcp-client.runTests",
+        "title": "Mira: Run Tests"
+      },
+      {
+        "command": "vscode-mcp-client.collectLogs",
+        "title": "Mira: Collect Logs"
+      },
+      {
+        "command": "mira-workflow.calculator",
+        "title": "Mira Workflow: Calculator"
+      },
+      {
+        "command": "mira-workflow.multiTool",
+        "title": "Mira Workflow: Multi-Tool"
+      },
+      {
+        "command": "mira-workflow.custom",
+        "title": "Mira Workflow: Custom Workflow"
+      },
+      {
+        "command": "mira-workflow.showStatus",
+        "title": "Mira Workflow: Show Status"
+      },
+      {
+        "command": "mira-workflow.showOutput",
+        "title": "Mira Workflow: Show Output"
+      },
+      {
+        "command": "mira-llm.configure",
+        "title": "Mira LLM: Configure API Key"
+      },
+      {
+        "command": "mira-llm.showStatus",
+        "title": "Mira LLM: Show Status"
+      },
+      {
+        "command": "mira-llm.openSettings",
+        "title": "Mira LLM: Open Settings"
+      },
+      {
+        "command": "mira-workflow.debugDesign",
+        "title": "Mira Workflow: Debug Design Workflow"
+      },
+      {
+        "command": "langgraph-workflow.executeDesign",
+        "title": "LangGraph: Execute Design Workflow"
+      },
+      {
+        "command": "langgraph-workflow.visualize",
+        "title": "LangGraph: Visualize Workflow"
+      },
+      {
+        "command": "langgraph-workflow.debug",
+        "title": "LangGraph: Debug Workflow"
+      },
+      {
+        "command": "langgraph-workflow.showGraphStructure",
+        "title": "LangGraph: Show Graph Structure"
+      },
+      {
+        "command": "langgraph-workflow.test",
+        "title": "LangGraph: Test Workflow System"
       }
     ],
     "configuration": {
-      "title": "MCP Client",
+      "title": "Mira",
       "properties": {
-        "mcpClient.serverUrl": {
-          "type": "string",
-          "default": "http://localhost:8080",
-          "description": "URL of the MCP server or path to MCP server binary for stdio mode"
+        "mira.autoConnect": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically initialize Mira on extension startup"
         },
-        "mcpClient.apiKey": {
+        "mira.llm.provider": {
           "type": "string",
-          "default": "",
-          "description": "API Key for the LLM service"
-        },
-        "mcpClient.modelProvider": {
-          "type": "string",
-          "enum": [
-            "openai",
-            "anthropic",
-            "gemini"
-          ],
+          "enum": ["openai", "anthropic", "google", "azure", "local"],
           "default": "openai",
-          "description": "LLM provider to use for parsing and other LLM operations"
+          "description": "LLM provider for Mira workflow system"
         },
-        "mcpClient.modelName": {
+        "mira.llm.model": {
+          "type": "string",
+          "default": "gpt-4",
+          "description": "LLM model to use (e.g., gpt-4, claude-3, gemini-pro)"
+        },
+        "mira.llm.apiKey": {
           "type": "string",
           "default": "",
-          "description": "Model name to use with the selected provider (leave empty for default model)"
+          "description": "API key for the LLM provider"
         },
-        "mcpClient.githubToken": {
+        "mira.llm.baseUrl": {
           "type": "string",
           "default": "",
-          "description": "GitHub Personal Access Token required for github-mcp-server"
+          "description": "Custom base URL for the LLM API (optional)"
         },
-        "mcpClient.remoteToolsets": {
-          "type": "string",
-          "default": "",
-          "description": "Comma-separated toolset names to send via X-MCP-Toolsets header when using a remote HTTP MCP server."
-        },
-        "mcpClient.remoteReadonly": {
-          "type": "boolean",
-          "default": false,
-          "description": "If true, sends X-MCP-Readonly: true when using a remote HTTP MCP server."
-        },
-        "mcpClient.serverType": {
-          "type": "string",
-          "enum": [
-            "standard",
-            "filesystem",
-            "stdio"
-          ],
-          "default": "stdio",
-          "description": "The type of MCP server: 'standard', 'filesystem', or 'stdio'"
-        },
-        "mcpClient.llmApiKey": {
-          "type": "string",
-          "default": "",
-          "description": "API Key for the LLM service used for command parsing"
-        },
-        "mcpClient.useMockLlm": {
-          "type": "boolean",
-          "default": true,
-          "description": "Use mock LLM implementation instead of making API calls (for testing or when no API key is available)"
-        },
-        "mcpClient.showSystemMessages": {
-          "type": "boolean",
-          "default": false,
-          "description": "Show system notes/messages in the chat (recommended off in production)"
-        },
-        "mcpClient.showRawAssistantResponse": {
-          "type": "boolean",
-          "default": false,
-          "description": "Show raw JSON output from assistant (dev/testing only; disables pretty print in chat)"
-        },
-        "mcpClient.embeddingServerUrl": {
-          "type": "string",
-          "default": "",
-          "description": "URL of the Embedding MCP server (JSON-RPC over HTTP). Leave empty to let vector server handle embeddings."
-        },
-        "mcpClient.vectorServerUrl": {
-          "type": "string",
-          "default": "",
-          "description": "URL of the Vector DB MCP server (JSON-RPC over HTTP) used for semantic tool selection."
-        },
-        "mcpClient.embeddingProvider": {
-          "type": "string",
-          "enum": [
-            "openai",
-            "gemini",
-            "anthropic"
-          ],
-          "default": "openai",
-          "description": "Provider to use for generating embeddings when no embedding MCP server is configured."
-        },
-        "mcpClient.embeddingModelName": {
-          "type": "string",
-          "default": "",
-          "description": "Embedding model name to use with the selected embedding provider (e.g., 'text-embedding-3-small' for OpenAI or 'text-embedding-004' for Gemini)."
-        },
-        "mcpClient.embeddingApiKey": {
-          "type": "string",
-          "default": "",
-          "description": "API Key specifically for the embedding provider (falls back to llmApiKey or apiKey if empty)."
-        },
-        "mcpClient.semanticNamespace": {
-          "type": "string",
-          "default": "github-tools",
-          "description": "Semantic index namespace to store GitHub MCP tool catalog vectors."
-        },
-        "mcpClient.semanticTopK": {
+        "mira.llm.temperature": {
           "type": "number",
-          "default": 30,
-          "description": "Maximum number of tools to retrieve from semantic search before prompt packing."
+          "default": 0.7,
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Temperature for LLM responses (0-2)"
         },
-        "mcpClient.milvusAddress": {
-          "type": "string",
-          "default": "127.0.0.1:19530",
-          "description": "Milvus server address (host:port) for direct vector storage/query. Leave empty to use the Vector MCP server path instead."
+        "mira.llm.maxTokens": {
+          "type": "number",
+          "default": 4000,
+          "minimum": 1,
+          "maximum": 100000,
+          "description": "Maximum tokens for LLM responses"
         },
-        "mcpClient.milvusUsername": {
-          "type": "string",
-          "default": "root",
-          "description": "Milvus username (if authentication is enabled)."
-        },
-        "mcpClient.milvusPassword": {
-          "type": "string",
-          "default": "",
-          "description": "Milvus password (if authentication is enabled)."
-        },
-        "mcpClient.milvusUseSSL": {
-          "type": "boolean",
-          "default": false,
-          "description": "Use SSL/TLS when connecting to Milvus."
-        },
-        "mcpClient.milvusCollectionPrefix": {
-          "type": "string",
-          "default": "tools_",
-          "description": "Prefix for Milvus collection names. The final collection is '<prefix><namespace>'."
+        "mira.llm.timeout": {
+          "type": "number",
+          "default": 30000,
+          "minimum": 1000,
+          "maximum": 300000,
+          "description": "Timeout for LLM API calls in milliseconds"
         }
       }
-    },
-    "menus": {
-      "editor/context": [
-        {
-          "command": "vscode-mcp-client.executePrompt",
-          "group": "ai@1",
-          "when": "editorTextFocus"
-        }
-      ],
-      "commandPalette": [
-        {
-          "command": "vscode-mcp-client.connect"
-        },
-        {
-          "command": "vscode-mcp-client.disconnect",
-          "when": "false"
-        },
-        {
-          "command": "vscode-mcp-client.executePrompt"
-        },
-        {
-          "command": "vscode-mcp-client.listTools"
-        }
-      ]
     }
   },
   "capabilities": {
@@ -251,74 +204,28 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js",
-    "package": "npx vsce package --no-git-tag-version --no-update-package-json",
-    "package-no-deps": "npx vsce package --no-dependencies --no-git-tag-version --no-update-package-json",
-    "simple-build": "bash ./scripts/simple-build.sh",
-    "install-typescript": "node ./scripts/install-typescript.js",
-    "bundle": "node ./scripts/bundle-extension.js",
-    "bundle-new": "node ./scripts/bundle-extension.js.new",
-    "fix-deps": "node ./scripts/fix-node-version.js",
-    "direct-install": "bash ./scripts/direct-install.sh",
-    "create-full-vsix": "node ./scripts/create-full-vsix.js",
-    "webpack-bundle": "node ./scripts/webpack-bundle.js",
-    "debug-github-token": "node ./scripts/fix-github-token.js",
-    "test-mcp-connection": "node ./scripts/direct-connect.js",
-    "fix-token-permission": "node ./scripts/fix-token-permission.js",
-    "clean-reinstall": "bash ./scripts/clean-reinstall.sh"
+    "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@azure/abort-controller": "1.0.0",
-    "@azure/core-auth": "1.0.0",
-    "@azure/core-client": "1.0.0",
-    "@azure/core-rest-pipeline": "1.0.0",
-    "@azure/core-tracing": "1.0.0",
-    "@azure/core-util": "^1.0.0",
-    "@azure/identity": "^1.0.0",
-    "@azure/logger": "^1.0.0",
-    "@azure/msal-browser": "^2.0.0",
-    "@azure/msal-common": "^4.0.0",
-    "@azure/msal-node": "^1.0.0",
-    "@types/glob": "^7.1.3",
-    "@types/minimatch": "^6.0.0",
-    "@types/mocha": "^8.2.2",
-    "@types/node": "^22.18.1",
-    "@types/uuid": "^10.0.0",
     "@types/vscode": "^1.60.0",
-    "@types/ws": "^8.5.4",
-    "@typescript-eslint/eslint-plugin": "^4.22.0",
-    "@typescript-eslint/parser": "^4.22.0",
-    "@vscode/vsce": "^2.19.0",
-    "eslint": "^7.24.0",
-    "glob": "^7.1.6",
-    "mocha": "^8.3.2",
-    "ts-loader": "^8.1.0",
-    "typescript": "^5.4.5",
-    "vscode-test": "^1.5.2",
-    "webpack": "^5.80.0",
-    "webpack-cli": "^4.9.2"
-  },
-  "overrides": {
-    "undici": "^5.28.4"
+    "@types/node": "16.x",
+    "@typescript-eslint/eslint-plugin": "^5.31.0",
+    "@typescript-eslint/parser": "^5.31.0",
+    "eslint": "^8.20.0",
+    "typescript": "^4.4.4"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.17.1",
-    "@google/generative-ai": "^0.1.3",
-    "@typespec/ts-http-runtime": "^0.1.0",
+    "@langchain/langgraph": "^0.2.0",
     "axios": "^1.11.0",
     "es-set-tostringtag": "^2.1.0",
     "follow-redirects": "^1.15.11",
     "form-data": "^4.0.4",
-    "langchain": "^0.3.33",
+    "langchain": "^0.0.189",
     "math-intrinsics": "^1.1.0",
-    "openai": "^4.28.0",
+    "openai": "4.21.0",
     "uuid": "^8.3.2",
     "ws": "^8.18.3",
     "yaml": "^2.4.2",
     "zod": "3.25.6"
-  },
-  "optionalDependencies": {
-    "@zilliz/milvus2-sdk-node": "^2.4.1",
-    "milvus-sdk-node": "^2.4.1"
   }
 }

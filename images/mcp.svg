@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <g fill="currentColor">
+    <!-- Chat bubble -->
+    <path d="M4 4h10c2.21 0 4 1.79 4 4v3c0 2.21-1.79 4-4 4H9l-4 3v-3H4c-2.21 0-4-1.79-4-4V8c0-2.21 1.79-4 4-4z" transform="translate(3 2)"/>
+    <!-- Spark/star for AI hint -->
+    <path d="M12 2.5l.7 1.6 1.6.7-1.6.7-.7 1.6-.7-1.6-1.6-.7 1.6-.7.7-1.6z"/>
+  </g>
+</svg>

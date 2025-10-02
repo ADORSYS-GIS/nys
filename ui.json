@@ -1,0 +1,159 @@
+{
+  "meta": {
+    "title": "Mira Sidebar Chat - UI & Interaction Spec",
+    "version": "1.0",
+    "origin": "hand-sketch -> machine spec"
+  },
+  "ui_layout": {
+    "container": "sidebar",
+    "regions": [
+      {
+        "id": "topbar",
+        "position": "top",
+        "elements": [
+          { "type": "button", "id": "newChat", "label": "+ New Chat" },
+          { "type": "button", "id": "settings", "label": "Settings", "icon": "gear" }
+        ]
+      },
+      {
+        "id": "main",
+        "position": "center",
+        "subregions": [
+          {
+            "id": "chatPane",
+            "position": "left",
+            "behavior": "scrollable messages list",
+            "messageStyle": { "userBubble": "right", "assistantBubble": "left", "theme": "dark" }
+          },
+          {
+            "id": "historyList",
+            "position": "right",
+            "behavior": "vertical list of chat sessions with icons and timestamps",
+            "maxItems": 50
+          }
+        ]
+      },
+      {
+        "id": "composer",
+        "position": "bottom",
+        "elements": [
+          { "type": "fileReference", "id": "fileRef", "label": "File reference (optional)", "behavior": "attach file context to next message" },
+          {
+            "type": "controls",
+            "id": "controls",
+            "items": [
+              { "type": "modelSelect", "id": "model", "label": "Model", "options": ["gpt-4", "gpt-4o", "local-lite"] },
+              { "type": "roleSelect", "id": "role", "label": "Role", "options": ["Architect","Developer","Debugger","DataEngineer","DocEngineer","PM"] },
+              { "type": "toggle", "id": "toggleCommands", "label": "Commands", "toggles": ["docs","web","explain","git"] },
+              { "type": "button", "id": "send", "label": "Send" }
+            ]
+          },
+          { "type": "feedbackLink", "id": "shareFeedback", "label": "Share feedback" }
+        ]
+      }
+    ]
+  },
+  "components": {
+    "ChatMessage": {
+      "fields": ["id","sessionId","role","content","attachments","timestamp","source" ],
+      "roles": ["user","assistant","system"],
+      "attachments": ["fileRefs","toolOutput","codeDiffs"]
+    },
+    "ChatSession": {
+      "fields": ["id","title","createdAt","updatedAt","messages[]","metadata"],
+      "metadata": ["projectId",".nys config","model","rolePreferences"]
+    },
+    "Task": {
+      "fields": ["id","title","description","status","assigneeRole","actionSpec"],
+      "status": ["todo","in_progress","done","failed"]
+    },
+    "ToolCommand": {
+      "fields": ["id","toolName","params","initiator","timestamp","status","result"]
+    },
+    "TerminalSession": {
+      "fields": ["id","cwd","user","startedAt","log[]","status"]
+    }
+  },
+  "events": {
+    "UI->Backend": [
+      { "name": "newChat", "payload": { "title":"string","sessionId?":"string" }, "effect": "create session, persist, switch view" },
+      { "name": "sendMessage", "payload": { "sessionId","message","fileRefs?","model?","role?","toggles?" }, "effect": "persist user turn -> orchestrator -> LLM -> persist assistant turn -> stream to UI" },
+      { "name": "selectHistoryItem", "payload": { "sessionId" }, "effect": "load history into main chat pane" },
+      { "name": "toggleCommand", "payload": { "sessionId","command","enabled" }, "effect": "set runtime flag used when composing prompt (e.g., allow web search)" },
+      { "name": "requestPlan", "payload": { "sessionId","goal","constraints?" }, "effect": "invoke planner chain -> produce Task[] -> persist tasks -> show in Planner UI" },
+      { "name": "runToolCommand", "payload": { "toolName","params","sessionId","taskId?" }, "effect": "invoke tool via ToolRegistry/MCP -> stream output back -> attach result to message/task" },
+      { "name": "startTerminalSession", "payload": { "cwd","sessionName" }, "effect": "create TerminalSession, stream output to TerminalView" },
+      { "name": "markTaskDone", "payload": { "taskId","sessionId" }, "effect": "update Task status, log event; if auto mode: inform orchestrator to continue next action" }
+    ]
+  },
+  "flows": {
+    "sendMessageFlow": {
+      "steps": [
+        "1. Persist user ChatMessage to .nys memory",
+        "2. Compose prompt: systemPrompt + roleTemplate + topK retrieved contexts + user message + toggles metadata",
+        "3. RoleOrchestrator classifies user intent and selects chain(s)",
+        "4. LangChainEngine executes chain (may call tools: terminal/vectorsearch/git)",
+        "5. As assistant generates text -> stream to UI (partial tokens allowed)",
+        "6. Persist assistant ChatMessage and any ToolCommand results",
+        "7. If planner tasks created: persist to .nys/tasks and show Planner UI"
+      ]
+    },
+    "planAndExecute": {
+      "steps": [
+        "1. User triggers plan (UI): requestPlan",
+        "2. LangChainPlanner returns structured plan (zod schema enforced)",
+        "3. Persist tasks to .nys/tasks.json",
+        "4. In auto-execute mode: pick first task that has actionSpec.type==='cmd' or 'edit'",
+        "5. If actionSpec.type === 'cmd' -> TerminalService.run(actionSpec.command)",
+        "6. On success mark task done, append logs; on failure mark failed and propose fixes"
+      ]
+    }
+  },
+  "prompts_and_templates": {
+    "systemPrompt": "You are Mira — a developer-first assistant. Act in the selected role and use available tools responsibly. Provide step-by-step explanations and bind outputs as code blocks when needed.",
+    "roleTemplates": {
+      "Architect": "You are a software architect. Focus on high-level design, modules, dependencies, and trade-offs. Produce an outline and tasks.",
+      "Developer": "You are a developer. Produce code snippets, tests, and step-by-step changes. Favor minimal, working changes and include diffs.",
+      "Debugger": "You are a debugger. Reproduce, isolate root cause, propose minimal fix and tests to validate the fix."
+    },
+    "toolCallInstruction": "When invoking a tool, return structured JSON in a single codeblock labeled TOOL_CALL: {\"tool\":\"name\",\"params\":{...}} so the host can execute it."
+  },
+  "apis": {
+    "orchestrator": { "endpoint":"/orchestrator/chat", "method":"POST", "body":"{sessionId, userMessage, model, role, fileRefs, toggles}" },
+    "planner": { "endpoint":"/orchestrator/plan", "method":"POST", "body":"{sessionId, title, goals, constraints}" },
+    "tools": { "endpoint":"/tools/exec", "method":"POST", "body":"{toolName, params, sessionId, taskId}" },
+    "terminal": { "endpoint":"/terminal/session", "method":"POST", "body":"{cwd, sessionName}" }
+  },
+  "storage_and_persistence": {
+    "baseFolder": ".nys",
+    "files": {
+      "config": ".nys/config.json",
+      "memory": ".nys/memory.json",
+      "vectorstore": ".nys/vectorstore.json",
+      "tasks": ".nys/tasks.json",
+      "terminalSessions": ".nys/terminals.json"
+    },
+    "rules": [
+      "Do not store API keys in .nys",
+      "Use VS Code SecretStorage or environment variables for secrets",
+      "Keep memory and vectorstore JSON compact and sharded by session/project"
+    ]
+  },
+  "acceptance_tests": [
+    {
+      "id": "A1",
+      "description": "Send a message, receive an assistant reply streamed to the chat pane, persisted in .nys/memory.json",
+      "steps": ["open chat", "send 'Hello'", "assert assistant reply displayed", "assert .nys/memory.json contains both messages"]
+    },
+    {
+      "id": "A2",
+      "description": "Create a plan and run a simple command task",
+      "steps": ["request plan for 'add endpoint X'","assert tasks appear in Planner UI","mark first task auto-execute","assert TerminalView shows command output","assert task marked done and persisted"]
+    },
+    {
+      "id": "A3",
+      "description": "Tool invocation by agent",
+      "steps": ["send request 'list project files'","assert agent emits TOOL_CALL for filesystem listing","assert extension executes tool and returns results inline"]
+    }
+  ]
+}

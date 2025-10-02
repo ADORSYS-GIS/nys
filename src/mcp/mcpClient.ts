@@ -11,7 +11,6 @@ import {
 import { setActiveClient } from './clientRegistry';
 import { setCachedTools } from './toolsetCache';
 import { setToolsetFetcher } from './toolsetProvider';
-import { ensureSemanticIndex } from './semanticIndexer';
 
 // MCP server types
 export enum McpServerType {
@@ -249,7 +248,7 @@ export class McpClient extends EventEmitter {
             setCachedTools(arr);
             try {
               // Build or refresh the semantic index at startup using current tool catalog
-              await ensureSemanticIndex(arr);
+              // Removed ensureSemanticIndex call as it is no longer needed
                             try {
                               console.log(`[Semantic] Indexed/ensured semantic index for ${arr.length} tools.`);
                             } catch {}

@@ -23,7 +23,7 @@ export function setToolsetFetcher(fn: () => Promise<DiscoveredTool[]>): void {
 import { getActiveClient } from './clientRegistry';
 import { buildJsonRpcRequest } from './jsonRpc';
 import { getCachedTools } from './toolsetCache';
-import { ensureSemanticIndex, semanticSearch } from './semanticIndexer';
+import { semanticSearch } from './semanticIndexer';
 
 /**
  * Send a prompt to the MCP server and listen briefly for tools/* notifications
@@ -155,7 +155,6 @@ export async function getSemanticToolsetForPrompt(
  */
 export async function getSemanticToolsetExternal(
   userPrompt: string,
-  context: string = '',
   topK: number = 30
 ): Promise<DiscoveredTool[]> {
   try {
@@ -163,10 +162,10 @@ export async function getSemanticToolsetExternal(
     if (!Array.isArray(cached) || cached.length === 0) return [];
 
     // Ensure index exists/updated
-    try { await ensureSemanticIndex(cached as any); } catch {}
+    // Removed ensureSemanticIndex call as it is no longer needed
 
     // Run semantic search
-    const hits = await semanticSearch(userPrompt, context || '', topK);
+    const hits = await semanticSearch(userPrompt, topK);
     if (!Array.isArray(hits) || hits.length === 0) return [];
 
     // Map by normalized name

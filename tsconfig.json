@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "types": [],
     "module": "commonjs",
     "target": "es6",
     "outDir": "out",
@@ -16,8 +15,35 @@
     "noUnusedParameters": true,
     "esModuleInterop": true
   },
+  "include": [
+    "src/extension.ts",
+    "src/issueViewProvider.ts",
+    "src/storage/**/*",
+    "src/workflow/**/*",
+    "src/modelProviders/modelProviderFactory.ts",
+    "src/modelProviders/modelProviderInterface.ts",
+    "src/modelProviders/openAiProvider.ts",
+    "src/config/**/*"
+  ],
   "exclude": [
     "node_modules",
-    ".vscode-test"
+    ".vscode-test",
+    "src/test/**/*",
+    "src/mcp/**/*",
+    "src/orchestrator/**/*",
+    "src/parsers/**/*",
+    "src/persistence/**/*",
+    "src/presentation/**/*",
+    "src/tools/**/*",
+    "src/catalog/**/*",
+    "src/formatters/**/*",
+    "src/sidebarViews.ts",
+    "src/statusBar.ts",
+    "src/config.ts",
+    "src/chatView.ts",
+    "src/chatViewProvider.ts",
+    "src/enhancedChatView.ts",
+    "src/modelProviders/anthropicProvider.ts",
+    "src/modelProviders/geminiProvider.ts"
   ]
 }

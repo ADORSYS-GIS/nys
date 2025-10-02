@@ -10,6 +10,23 @@ This guide provides detailed instructions for setting up and using the VS Code M
 
 ## Setup Instructions
 
+---
+
+## Build & Packaging
+
+To build and package the extension (including all persistent state in `.nys/`):
+
+```bash
+npm run compile
+npx vsce package
+```
+
+- The build/package scripts ensure `.nys/` is always included in the VSIX.
+- You can also use `scripts/bundle-extension.js` or `scripts/generate-vsix.sh` for advanced packaging.
+- After packaging, install the VSIX in VS Code via Extensions → ... → Install from VSIX.
+
+---
+
 ### 1. Start the MCP Filesystem Server
 
 The easiest way to get started is with the MCP Filesystem server from Docker Hub:
@@ -39,6 +56,21 @@ docker-compose up -d
 ## Usage
 
 ### Executing Prompts
+
+---
+
+## Persistent State & Workflows
+
+- **Persistent State in `.nys/`:**
+  All chat history, workflow state, and user preferences are stored in the `.nys/` directory at the workspace root. This enables session continuity and advanced context recall.
+
+- **Sidebar Workflows:**
+  The sidebar provides panels for chat, tool selection, and workflow management. You can trigger, monitor, and manage AI-driven tasks directly from the sidebar.
+
+- **LangChain Orchestration:**
+  Mira uses LangChain for advanced prompt orchestration, memory management, and tool chaining. This enables context-aware, multi-step workflows and dynamic tool selection based on user intent.
+
+---
 
 1. Open a file you want to work with
 2. Press `Ctrl+Shift+P` and select "MCP: Execute Prompt"

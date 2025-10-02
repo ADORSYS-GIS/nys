@@ -5,7 +5,7 @@ import { ModelProviderFactory } from '../modelProviders/modelProviderFactory';
 import { getCachedTools } from '../mcp/toolsetCache';
 import { getSemanticToolsetExternal } from '../mcp/toolsetProvider';
 // Semantic memory-based grounding (LangChain-backed via semanticIndexer)
-import { ensureSemanticIndex, semanticSearch } from '../mcp/semanticIndexer';
+import { semanticSearch } from '../mcp/semanticIndexer';
 
 interface LlmParserOptions {
   endpoint?: string;
@@ -96,7 +96,7 @@ export class LlmParser {
     if (!Array.isArray(selectedTools) || selectedTools.length === 0) {
       // Try external semantic selection via embedding/vector MCP servers
       try {
-        const ext = await getSemanticToolsetExternal(input, nysContext, 30);
+        const ext = await getSemanticToolsetExternal(input, 30);
         if (Array.isArray(ext) && ext.length > 0) {
           selectedTools = this.packToolsWithinBudget(ext, 30, 4000);
         }
@@ -127,8 +127,7 @@ export class LlmParser {
     try {
       const cachedTools = await getCachedTools().catch(() => []);
       if (Array.isArray(cachedTools) && cachedTools.length > 0) {
-        await ensureSemanticIndex(cachedTools as any);
-        const hits = await semanticSearch(input, nysContext, 30);
+        const hits = await semanticSearch(input, 30);
 
         if (Array.isArray(hits) && hits.length > 0) {
           const norm = (s: any) => (typeof s === 'string' ? s : '')
