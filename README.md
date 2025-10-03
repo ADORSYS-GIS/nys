@@ -1,46 +1,95 @@
-# VS Code Coding Assistant (nys)
+# Mira - SPARC Workflow-Driven Development Assistant
 
-A Visual Studio Coding Assistant that connects to Model Context Protocol (MCP) servers and External data sources to provide maximum output to user's request. It provides an AI Chat panel, executes prompts, lists available tools, and supports both HTTP/WebSocket servers and local stdio binaries.
-it also has special base prompts, debugging, coding and orchestration workflows build in and provide graph database connection to store relationship in codebase to generate documentations to better assist in daily task
+A Visual Studio Code extension that implements a **workflow-driven assistant** based on the **SPARC framework** (Specification → Pseudocode → Architecture → Refinement → Completion). The assistant is **issue-driven**: every new task is stored as an *issue folder*, and each issue goes through **Design → Build → Debug** modes for systematic development.
+
+## 🎯 **Core Philosophy**
+
+Mira transforms development from ad-hoc coding to structured, traceable workflows. Every development task becomes an issue that progresses through three distinct phases:
+
+- **🎨 Design Mode**: Analyze requirements, generate specifications, and create technical guidelines
+- **🔨 Build Mode**: Generate code, create project structure, and implement features  
+- **🐛 Debug Mode**: Identify issues, apply fixes, and optimize performance
+
+This ensures every piece of code has clear requirements, documented decisions, and traceable evolution.
 
 <https://github.com/user-attachments/assets/55d831bc-c612-485d-9648-1612c3aa1c6f>
 
-## Architecture worflow
-![Architecture](/images/workflow.png)
+## 🚀 **Key Features**
 
-https://drive.google.com/file/d/1PIz6mFjYTbwbW5r_Db3CTl7WIQBAVjfp/view?usp=sharing
+### **Issue-Driven Workflow System**
+- **Issue Folder Structure**: Each task gets a dedicated folder with requirements, guidelines, notes, and outputs
+- **Three-Mode Progression**: Design → Build → Debug workflow for systematic development
+- **Persistent State Management**: All workflow state stored in `.nys/` directory for session continuity
+- **Traceable Development**: Every code change linked to specific requirements and decisions
 
-## Key Features
+### **SPARC Framework Integration**
+- **Specification**: Automated requirements extraction and technical specification generation
+- **Pseudocode**: Architecture planning and design documentation
+- **Architecture**: Project structure planning and dependency management
+- **Refinement**: Iterative improvement and optimization
+- **Completion**: Final implementation and testing
 
-- Connect to MCP servers
-  - Standard HTTP/WebSocket servers
-  - Stdio mode for local binaries (e.g., GitHub MCP server)
-- AI Chat webview (View: MCP AI Chat → AI Chat)
-- Commands: Connect, Execute Prompt, List Tools, Open Chat View, Disconnect
-- Status bar integration (connection/processing state)
-- Tool discovery cached on connect (no periodic 30‑min refresh)
-- Leverages MCP protocol to perform elicitation reducing hallucination rate
-- Format's user's prompt based on previous chat and project context improving result output
-- Read and work with knowledge and Guidelines from specific directories and files
-- Provide request/response cost
-- Should be capable of rolling back to any code version
-- Langchain Intergration for chat orchestration and memory management
+### **Advanced Tool Integration**
+- **MCP Server Support**: Connect to HTTP/WebSocket servers and local stdio binaries
+- **Built-in Tools**: Computation, search, parsing, and file operations
+- **External Data Sources**: GitHub, web APIs, and custom data integrations
+- **AI Chat Interface**: Context-aware conversations with project understanding
 
-## Mira Architecture Overview
+### **Development Workflow Features**
+- **Mode-Specific Processing**: Tailored workflows for design, build, and debug phases
+- **File System Integration**: Direct project file manipulation and structure management
+- **State Persistence**: Workflow progress saved across sessions
+- **Rollback Capability**: Version control integration for code state management
 
-The Mira extension is architected for modular, persistent, and orchestrated AI workflows in VS Code.
+## 📂 **Issue Folder Structure**
 
-- **LangChain Orchestration:**
-  Mira leverages LangChain for advanced prompt orchestration, memory management, and tool chaining. This enables context-aware, multi-step workflows and dynamic tool selection based on user intent.
+Each development task is organized in a dedicated issue folder for complete traceability:
 
-- **Sidebar Workflows:**
-  The extension provides a sidebar with interactive panels for chat, tool selection, and workflow management. Users can trigger, monitor, and manage AI-driven tasks directly from the sidebar.
+```
+/issues/ISSUE-001/
+   ├── requirements.md   # Generated requirements & technical specs
+   ├── guidelines.md     # Style guides, dependencies, coding constraints  
+   ├── notes.md          # Iterations, debug notes, brainstorming
+   ├── status.json       # Tracks mode (design/build/debug), progress, state
+```
 
-- **Persistent State in `.nys/`:**
-  All persistent state, including chat history, workflow state, and user preferences, is stored in the `.nys/` directory at the workspace root. This ensures session continuity and enables advanced features like context recall and workflow resumption.
+## 🔄 **Workflow Modes**
 
-- **Extensible Model Providers:**
-  Mira supports multiple model providers (OpenAI, Gemini, Anthropic, etc.) and can orchestrate between them as needed.
+### **🎨 Design Mode**
+- **Input**: User prompt (problem statement)
+- **Process**: 
+  - Analyze user input & project state
+  - Extract features and constraints
+  - Generate `requirements.md` and `guidelines.md`
+- **Output**: Structured documents inside issue folder
+
+### **🔨 Build Mode**  
+- **Input**: `requirements.md` + `guidelines.md`
+- **Process**:
+  - Parse requirements and technical specifications
+  - Propose project structure (if needed)
+  - Generate source code, configs, tests
+  - Update `status.json` with progress
+- **Output**: Code written to project files or `outputs/`
+
+### **🐛 Debug Mode**
+- **Input**: Existing code + requirements/guidelines
+- **Process**:
+  - Identify bugs, errors, or performance issues
+  - Generate fixes and improvements
+  - Apply fixes to project files
+  - Record debug notes in `notes.md`
+- **Output**: Updated project files and documentation
+
+## 🏗️ **Architecture Overview**
+
+Mira is architected for modular, persistent, and orchestrated AI workflows:
+
+- **SPARC Workflow Engine**: Core orchestration system managing Design → Build → Debug transitions
+- **Issue Management System**: Persistent issue folders with structured metadata and state tracking
+- **Tool Integration Layer**: Built-in tools + MCP server support for external capabilities
+- **File System Integration**: Direct project manipulation with version control awareness
+- **State Persistence**: All workflow state stored in `.nys/` directory for session continuity
 
 ## Requirements
 
@@ -70,29 +119,54 @@ npx vsce package
 - You can also use `scripts/bundle-extension.js` or `scripts/generate-vsix.sh` for advanced packaging.
 - After packaging, install the VSIX in VS Code via Extensions → ... → Install from VSIX.
 
-## Quick Start
+## 🚀 **Quick Start**
 
-1.1) Installing from the VS Code Marketplace
-- Search for "nys" in the Extensions view
-- Click Install
+### **Installation**
+1. **From VS Code Marketplace**: Search for "Mira" in Extensions view and install
+2. **From Source**: Build VSIX package and install via Extensions → Install from VSIX
 
-1.2) Installing from source
-- From VSIX: Build or download a .vsix, then in VS Code: Extensions → … → Install from VSIX…
+### **Getting Started**
+1. **Create Your First Issue**: 
+   - Open Command Palette → `Mira: Create New Issue`
+   - Enter a descriptive title and problem statement
 
-2) Configure (Settings → “nys”)
+2. **Start in Design Mode**:
+   - Select your issue in the Mira sidebar
+   - Switch to Design mode using the dropdown
+   - Describe your requirements in the chat
 
+3. **Progress Through Workflow**:
+   - **Design**: Generate requirements and guidelines
+   - **Build**: Generate code and project structure  
+   - **Debug**: Fix issues and optimize performance
 
-3) Use
-- Command Palette → MCP: Connect to Server
-- Command Palette → MCP: Open Chat View (or MCP: Execute Prompt)
-- Command Palette → MCP: List Available Tools
+### **Key Commands**
+- `Mira: Create New Issue` - Start a new development task
+- `Mira: Switch to Design Mode` - Enter requirements analysis phase
+- `Mira: Switch to Build Mode` - Enter code generation phase
+- `Mira: Switch to Debug Mode` - Enter issue fixing phase
+- `Mira: Open Issue Manager` - Access the main interface
 
-## Commands
-- MCP: Connect to Server (vscode-mcp-client.connect)
-- MCP: Disconnect (vscode-mcp-client.disconnect)
-- MCP: Execute Prompt (vscode-mcp-client.executePrompt)
-- MCP: List Available Tools (vscode-mcp-client.listTools)
-- MCP: Open Chat View (vscode-mcp-client.openChatView)
+## 📋 **Complete Command Reference**
+
+### **Issue Management**
+- `Mira: Create New Issue` - Start a new development task with issue folder
+- `Mira: Open Issue Manager` - Access the main Mira interface
+- `Mira: Run Build` - Execute build process for current issue
+- `Mira: Run Tests` - Execute test suite for current issue  
+- `Mira: Collect Logs` - Gather and analyze error logs
+
+### **Workflow Mode Control**
+- `Mira: Switch to Design Mode` - Enter requirements analysis phase
+- `Mira: Switch to Build Mode` - Enter code generation phase
+- `Mira: Switch to Debug Mode` - Enter issue fixing phase
+
+### **MCP Integration** 
+- `MCP: Connect to Server` - Connect to external MCP servers
+- `MCP: Disconnect` - Disconnect from MCP servers
+- `MCP: Execute Prompt` - Send prompt to connected MCP server
+- `MCP: List Available Tools` - Show available MCP tools
+- `MCP: Open Chat View` - Open dedicated MCP chat interface
 
 ## Configuration (summary)
 

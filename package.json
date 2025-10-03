@@ -1,7 +1,7 @@
 {
   "name": "nys",
   "displayName": "Mira",
-  "description": "AI-powered development assistant with issue-driven workflow",
+  "description": "Issue-Driven SPARC development assistant with Design→Build→Debug modes",
   "version": "6.5.6",
   "repository": {
     "type": "git",
@@ -19,8 +19,13 @@
     "ai",
     "assistant",
     "development",
+    "sparc",
+    "workflow",
+    "design",
+    "build",
+    "debug",
     "issues",
-    "workflow"
+    "mcp"
   ],
   "categories": [
     "Other"
@@ -81,62 +86,6 @@
       {
         "command": "vscode-mcp-client.collectLogs",
         "title": "Mira: Collect Logs"
-      },
-      {
-        "command": "mira-workflow.calculator",
-        "title": "Mira Workflow: Calculator"
-      },
-      {
-        "command": "mira-workflow.multiTool",
-        "title": "Mira Workflow: Multi-Tool"
-      },
-      {
-        "command": "mira-workflow.custom",
-        "title": "Mira Workflow: Custom Workflow"
-      },
-      {
-        "command": "mira-workflow.showStatus",
-        "title": "Mira Workflow: Show Status"
-      },
-      {
-        "command": "mira-workflow.showOutput",
-        "title": "Mira Workflow: Show Output"
-      },
-      {
-        "command": "mira-llm.configure",
-        "title": "Mira LLM: Configure API Key"
-      },
-      {
-        "command": "mira-llm.showStatus",
-        "title": "Mira LLM: Show Status"
-      },
-      {
-        "command": "mira-llm.openSettings",
-        "title": "Mira LLM: Open Settings"
-      },
-      {
-        "command": "mira-workflow.debugDesign",
-        "title": "Mira Workflow: Debug Design Workflow"
-      },
-      {
-        "command": "langgraph-workflow.executeDesign",
-        "title": "LangGraph: Execute Design Workflow"
-      },
-      {
-        "command": "langgraph-workflow.visualize",
-        "title": "LangGraph: Visualize Workflow"
-      },
-      {
-        "command": "langgraph-workflow.debug",
-        "title": "LangGraph: Debug Workflow"
-      },
-      {
-        "command": "langgraph-workflow.showGraphStructure",
-        "title": "LangGraph: Show Graph Structure"
-      },
-      {
-        "command": "langgraph-workflow.test",
-        "title": "LangGraph: Test Workflow System"
       }
     ],
     "configuration": {
@@ -146,48 +95,6 @@
           "type": "boolean",
           "default": false,
           "description": "Automatically initialize Mira on extension startup"
-        },
-        "mira.llm.provider": {
-          "type": "string",
-          "enum": ["openai", "anthropic", "google", "azure", "local"],
-          "default": "openai",
-          "description": "LLM provider for Mira workflow system"
-        },
-        "mira.llm.model": {
-          "type": "string",
-          "default": "gpt-4",
-          "description": "LLM model to use (e.g., gpt-4, claude-3, gemini-pro)"
-        },
-        "mira.llm.apiKey": {
-          "type": "string",
-          "default": "",
-          "description": "API key for the LLM provider"
-        },
-        "mira.llm.baseUrl": {
-          "type": "string",
-          "default": "",
-          "description": "Custom base URL for the LLM API (optional)"
-        },
-        "mira.llm.temperature": {
-          "type": "number",
-          "default": 0.7,
-          "minimum": 0,
-          "maximum": 2,
-          "description": "Temperature for LLM responses (0-2)"
-        },
-        "mira.llm.maxTokens": {
-          "type": "number",
-          "default": 4000,
-          "minimum": 1,
-          "maximum": 100000,
-          "description": "Maximum tokens for LLM responses"
-        },
-        "mira.llm.timeout": {
-          "type": "number",
-          "default": 30000,
-          "minimum": 1000,
-          "maximum": 300000,
-          "description": "Timeout for LLM API calls in milliseconds"
         }
       }
     }
@@ -214,18 +121,5 @@
     "eslint": "^8.20.0",
     "typescript": "^4.4.4"
   },
-  "dependencies": {
-    "@langchain/langgraph": "^0.2.0",
-    "axios": "^1.11.0",
-    "es-set-tostringtag": "^2.1.0",
-    "follow-redirects": "^1.15.11",
-    "form-data": "^4.0.4",
-    "langchain": "^0.0.189",
-    "math-intrinsics": "^1.1.0",
-    "openai": "4.21.0",
-    "uuid": "^8.3.2",
-    "ws": "^8.18.3",
-    "yaml": "^2.4.2",
-    "zod": "3.25.6"
-  }
+  "dependencies": {}
 }

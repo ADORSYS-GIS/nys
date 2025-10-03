@@ -1,8 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { TypeScriptWorkflowManager } from './workflow/typescript/typescriptWorkflowManager';
-import { IssueWorkflowIntegration } from './workflow/typescript/issueWorkflowIntegration';
 
 export interface Issue {
   id: string;
@@ -29,13 +27,9 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
   private _issues: Issue[] = [];
   private _currentIssue: Issue | null = null;
   private _nysFolder: vscode.Uri | null = null;
-  private _workflowManager: TypeScriptWorkflowManager;
-  private _workflowIntegration: IssueWorkflowIntegration;
 
   constructor(private readonly _extensionUri: vscode.Uri) {
     this.initializeNysFolder();
-    this._workflowManager = new TypeScriptWorkflowManager();
-    this._workflowIntegration = new IssueWorkflowIntegration();
   }
 
   public resolveWebviewView(
@@ -279,7 +273,7 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
     }
   }
 
-  private async switchMode(mode: 'design' | 'build' | 'debug'): Promise<void> {
+  public async switchMode(mode: 'design' | 'build' | 'debug'): Promise<void> {
     if (!this._currentIssue) return;
 
     this._currentIssue.mode = mode;
@@ -338,7 +332,7 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
     this.updateWebview();
   }
 
-  private async runTest(issueId: string): Promise<void> {
+  public async runTest(issueId: string): Promise<void> {
     const issue = this._issues.find(i => i.id === issueId);
     if (!issue) return;
 
@@ -351,7 +345,7 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
     await this.addTodo(issueId, 'Run tests and verify results');
   }
 
-  private async runBuild(issueId: string): Promise<void> {
+  public async runBuild(issueId: string): Promise<void> {
     const issue = this._issues.find(i => i.id === issueId);
     if (!issue) return;
 
@@ -364,7 +358,7 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
     await this.addTodo(issueId, 'Build project and verify output');
   }
 
-  private async collectLogs(issueId: string): Promise<void> {
+  public async collectLogs(issueId: string): Promise<void> {
     const issue = this._issues.find(i => i.id === issueId);
     if (!issue) return;
 
@@ -412,7 +406,7 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
     }
   }
 
-  private getHtmlForWebview(webview: vscode.Webview): string {
+  public getHtmlForWebview(webview: vscode.Webview): string {
     const nonce = getNonce();
     
     return `<!DOCTYPE html>
@@ -650,145 +644,6 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
             font-size: 14px;
         }
 
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .modal-dialog {
-            background: var(--jb-bg-secondary);
-            border: 1px solid var(--jb-border);
-            border-radius: 8px;
-            min-width: 400px;
-            max-width: 600px;
-            max-height: 80vh;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--jb-border);
-        }
-
-        .modal-header h3 {
-            margin: 0;
-            color: var(--jb-fg-primary);
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--jb-fg-secondary);
-            font-size: 24px;
-            cursor: pointer;
-            padding: 0;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-close:hover {
-            color: var(--jb-fg-primary);
-        }
-
-        .modal-content {
-            padding: 20px;
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-            padding: 16px 20px;
-            border-top: 1px solid var(--jb-border);
-        }
-
-        .modal-btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .modal-btn.primary {
-            background: var(--jb-accent);
-            color: white;
-        }
-
-        .modal-btn.primary:hover {
-            background: var(--jb-accent-hover);
-        }
-
-        .modal-btn.secondary {
-            background: var(--jb-bg-tertiary);
-            color: var(--jb-fg-primary);
-            border: 1px solid var(--jb-border);
-        }
-
-        .modal-btn.secondary:hover {
-            background: var(--jb-bg-primary);
-        }
-
-        .modal-input {
-            width: 100%;
-            background: var(--jb-bg-primary);
-            border: 1px solid var(--jb-border);
-            border-radius: 6px;
-            padding: 8px 12px;
-            color: var(--jb-fg-primary);
-            font-family: var(--jb-font-family);
-            font-size: 14px;
-            margin-bottom: 12px;
-        }
-
-        .modal-input:focus {
-            outline: none;
-            border-color: var(--jb-accent);
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-        }
-
-        .modal-textarea {
-            width: 100%;
-            background: var(--jb-bg-primary);
-            border: 1px solid var(--jb-border);
-            border-radius: 6px;
-            padding: 8px 12px;
-            color: var(--jb-fg-primary);
-            font-family: var(--jb-font-family);
-            font-size: 14px;
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        .modal-textarea:focus {
-            outline: none;
-            border-color: var(--jb-accent);
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-        }
-
         /* Chat Message Styles */
         .message {
             margin-bottom: 16px;
@@ -894,7 +749,7 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
             background: var(--jb-accent-hover);
         }
 
-        .toggle-issues-btn, .minimize-terminal-btn {
+        .toggle-issues-btn {
             background: transparent;
             color: var(--jb-fg-secondary);
             border: none;
@@ -905,7 +760,7 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
             transition: all 0.2s;
         }
 
-        .toggle-issues-btn:hover, .minimize-terminal-btn:hover {
+        .toggle-issues-btn:hover {
             background: var(--jb-bg-tertiary);
             color: var(--jb-fg-primary);
         }
@@ -977,339 +832,6 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
         .issue-status.completed { background: var(--jb-success); color: white; }
         .issue-status.blocked { background: var(--jb-error); color: white; }
 
-        /* Main Panel - Issue View */
-        .main-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: var(--jb-bg-primary);
-        }
-
-        .issue-header {
-            padding: 16px 24px;
-            background: var(--jb-bg-secondary);
-            border-bottom: 1px solid var(--jb-border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .issue-title-main {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--jb-fg-primary);
-            margin: 0;
-        }
-
-        .mode-switcher {
-            display: flex;
-            background: var(--jb-bg-tertiary);
-            border-radius: 6px;
-            padding: 2px;
-        }
-
-        .mode-btn {
-            padding: 8px 16px;
-            border: none;
-            background: transparent;
-            color: var(--jb-fg-secondary);
-            cursor: pointer;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            transition: all 0.2s;
-        }
-
-        .mode-btn.active {
-            background: var(--jb-accent);
-            color: white;
-        }
-
-        .mode-btn:hover:not(.active) {
-            background: var(--jb-bg-primary);
-            color: var(--jb-fg-primary);
-        }
-
-        .issue-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .content-tabs {
-            display: flex;
-            background: var(--jb-bg-secondary);
-            border-bottom: 1px solid var(--jb-border);
-        }
-
-        .content-tab {
-            padding: 12px 24px;
-            border: none;
-            background: transparent;
-            color: var(--jb-fg-secondary);
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-        }
-
-        .content-tab.active {
-            color: var(--jb-fg-primary);
-            border-bottom-color: var(--jb-accent);
-        }
-
-        .content-tab:hover:not(.active) {
-            color: var(--jb-fg-primary);
-        }
-
-        .tab-content {
-            flex: 1;
-            padding: 24px;
-            overflow-y: auto;
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* Design Mode */
-        .design-content {
-            background: var(--jb-bg-primary);
-        }
-
-        .markdown-editor {
-            width: 100%;
-            min-height: 400px;
-            background: var(--jb-bg-secondary);
-            border: 1px solid var(--jb-border);
-            border-radius: 6px;
-            padding: 16px;
-            color: var(--jb-fg-primary);
-            font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
-            font-size: 13px;
-            line-height: 1.5;
-            resize: vertical;
-        }
-
-        /* Build Mode */
-        .build-content {
-            background: var(--jb-bg-primary);
-        }
-
-        .todos-section {
-            margin-bottom: 24px;
-        }
-
-        .todos-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-
-        .todos-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--jb-fg-primary);
-        }
-
-        .add-todo-btn {
-            background: var(--jb-accent);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .add-todo-btn:hover {
-            background: var(--jb-accent-hover);
-        }
-
-        .todo-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .todo-item {
-            display: flex;
-            align-items: center;
-            padding: 12px 16px;
-            background: var(--jb-bg-secondary);
-            border: 1px solid var(--jb-border);
-            border-radius: 6px;
-            margin-bottom: 8px;
-            transition: all 0.2s;
-        }
-
-        .todo-item:hover {
-            background: var(--jb-bg-tertiary);
-        }
-
-        .todo-checkbox {
-            margin-right: 12px;
-            cursor: pointer;
-        }
-
-        .todo-content {
-            flex: 1;
-            color: var(--jb-fg-primary);
-        }
-
-        .todo-content.completed {
-            text-decoration: line-through;
-            color: var(--jb-fg-disabled);
-        }
-
-        .todo-delete {
-            background: var(--jb-error);
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 10px;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-
-        .todo-item:hover .todo-delete {
-            opacity: 1;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-            margin-top: 24px;
-        }
-
-        .action-btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .action-btn.primary {
-            background: var(--jb-accent);
-            color: white;
-        }
-
-        .action-btn.primary:hover {
-            background: var(--jb-accent-hover);
-        }
-
-        .action-btn.secondary {
-            background: var(--jb-bg-tertiary);
-            color: var(--jb-fg-primary);
-            border: 1px solid var(--jb-border);
-        }
-
-        .action-btn.secondary:hover {
-            background: var(--jb-bg-secondary);
-        }
-
-        /* Debug Mode */
-        .debug-content {
-            background: var(--jb-bg-primary);
-        }
-
-        .log-collector {
-            background: var(--jb-bg-secondary);
-            border: 1px solid var(--jb-border);
-            border-radius: 6px;
-            padding: 16px;
-            margin-bottom: 24px;
-        }
-
-        .log-collector h3 {
-            margin: 0 0 12px 0;
-            color: var(--jb-fg-primary);
-            font-size: 14px;
-        }
-
-        .log-output {
-            background: #1e1e1e;
-            color: #d4d4d4;
-            padding: 12px;
-            border-radius: 4px;
-            font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
-            font-size: 12px;
-            line-height: 1.4;
-            max-height: 200px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-        }
-
-        /* Bottom Panel - Terminal */
-        .bottom-panel {
-            height: 0;
-            background: var(--jb-bg-secondary);
-            border-top: 1px solid var(--jb-border);
-            display: flex;
-            flex-direction: column;
-            transition: height 0.3s ease;
-            overflow: hidden;
-        }
-
-        .bottom-panel.visible {
-            height: 200px;
-        }
-
-        .terminal-header {
-            padding: 8px 16px;
-            background: var(--jb-bg-tertiary);
-            border-bottom: 1px solid var(--jb-border);
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--jb-fg-primary);
-        }
-
-        .terminal-content {
-            flex: 1;
-            padding: 12px 16px;
-            font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
-            font-size: 12px;
-            line-height: 1.4;
-            overflow-y: auto;
-            background: #1e1e1e;
-            color: #d4d4d4;
-        }
-
-        /* Right Panel - Task Checklist */
-        .right-panel {
-            width: 300px;
-            background: var(--jb-bg-secondary);
-            border-left: 1px solid var(--jb-border);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .right-panel-header {
-            padding: 12px 16px;
-            background: var(--jb-bg-tertiary);
-            border-bottom: 1px solid var(--jb-border);
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--jb-fg-primary);
-        }
-
-        .right-panel-content {
-            flex: 1;
-            padding: 16px;
-            overflow-y: auto;
-        }
-
         .empty-state {
             display: flex;
             flex-direction: column;
@@ -1345,19 +867,6 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
 
         .create-issue-btn:hover {
             background: var(--jb-accent-hover);
-        }
-
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .right-panel {
-                display: none;
-            }
-        }
-
-        @media (max-width: 800px) {
-            .issues-panel {
-                width: 240px;
-            }
         }
     </style>
 </head>
@@ -1410,17 +919,6 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
                     </div>
                 </div>
             </div>
-
-            <!-- Bottom Panel - Terminal (Hidden by default) -->
-            <div class="bottom-panel" id="terminalPanel">
-            <div class="terminal-header">
-                <span>Terminal</span>
-                <button class="minimize-terminal-btn" id="minimizeTerminalBtn" title="Minimize Terminal">−</button>
-            </div>
-                <div class="terminal-content" id="terminalOutput">
-                    Ready for commands...
-                </div>
-            </div>
         </div>
 
         <!-- Right Panel - Issues -->
@@ -1431,83 +929,6 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
             </div>
             <div class="issues-list" id="issuesList">
                 <!-- Issues will be populated here -->
-            </div>
-
-            <!-- Issue Detail View -->
-            <div id="issueView" style="display: none;">
-                <div class="issue-header">
-                    <h1 class="issue-title-main" id="issueTitle">Issue Title</h1>
-                    <div class="mode-switcher">
-                        <button class="mode-btn active" data-mode="design" id="designModeBtn">Design</button>
-                        <button class="mode-btn" data-mode="build" id="buildModeBtn">Build</button>
-                        <button class="mode-btn" data-mode="debug" id="debugModeBtn">Debug</button>
-                    </div>
-                </div>
-
-                <div class="issue-content">
-                    <div class="content-tabs">
-                        <button class="content-tab active" data-tab="design" id="designTabBtn">Design</button>
-                        <button class="content-tab" data-tab="build" id="buildTabBtn">Build</button>
-                        <button class="content-tab" data-tab="debug" id="debugTabBtn">Debug</button>
-                    </div>
-
-                    <!-- Design Tab -->
-                    <div class="tab-content active" id="designTab">
-                        <div class="design-content">
-                            <textarea class="markdown-editor" id="markdownEditor" placeholder="Describe your issue, requirements, and design considerations..."></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Build Tab -->
-                    <div class="tab-content" id="buildTab">
-                        <div class="build-content">
-                            <div class="todos-section">
-                                <div class="todos-header">
-                                    <h3 class="todos-title">Implementation TODOs</h3>
-                                    <button class="add-todo-btn" id="addTodoBtn">+ Add TODO</button>
-                                </div>
-                                <ul class="todo-list" id="todoList">
-                                    <!-- TODOs will be populated here -->
-                                </ul>
-                            </div>
-                            <div class="action-buttons">
-                                <button class="action-btn primary" id="runBuildBtn">Run Build</button>
-                                <button class="action-btn secondary" id="runTestBtn">Run Tests</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Debug Tab -->
-                    <div class="tab-content" id="debugTab">
-                        <div class="debug-content">
-                            <div class="log-collector">
-                                <h3>Error Logs</h3>
-                                <div class="log-output" id="logOutput">No logs collected yet. Click "Collect Logs" to gather error information.</div>
-                            </div>
-                            <div class="action-buttons">
-                                <button class="action-btn primary" id="collectLogsBtn">Collect Logs</button>
-                                <button class="action-btn secondary" id="analyzeErrorsBtn">Analyze Errors</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Dialogs -->
-    <div id="modalOverlay" class="modal-overlay" style="display: none;">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h3 id="modalTitle">Modal Title</h3>
-                <button class="modal-close" id="modalCloseBtn">&times;</button>
-            </div>
-            <div class="modal-content">
-                <div id="modalBody">Modal content goes here</div>
-            </div>
-            <div class="modal-footer">
-                <button class="modal-btn secondary" id="modalCancelBtn">Cancel</button>
-                <button class="modal-btn primary" id="modalConfirmBtn">Confirm</button>
             </div>
         </div>
     </div>
@@ -1532,7 +953,6 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
         function setupEventListeners() {
             // Toggle buttons
             document.getElementById('toggleIssuesBtn').addEventListener('click', toggleIssuesPanel);
-            document.getElementById('minimizeTerminalBtn').addEventListener('click', toggleTerminal);
             
             // Issue management
             document.getElementById('newIssueBtn').addEventListener('click', showCreateIssueDialog);
@@ -1542,43 +962,12 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
                 switchMode(this.value);
             });
             
-            // Tab switching
-            document.getElementById('designTabBtn').addEventListener('click', () => showTab('design'));
-            document.getElementById('buildTabBtn').addEventListener('click', () => showTab('build'));
-            document.getElementById('debugTabBtn').addEventListener('click', () => showTab('debug'));
-            
-            // Action buttons
-            document.getElementById('addTodoBtn').addEventListener('click', showAddTodoDialog);
-            document.getElementById('runBuildBtn').addEventListener('click', runBuild);
-            document.getElementById('runTestBtn').addEventListener('click', runTest);
-            document.getElementById('collectLogsBtn').addEventListener('click', collectLogs);
-            document.getElementById('analyzeErrorsBtn').addEventListener('click', analyzeErrors);
-            
             // Chat functionality
             document.getElementById('sendBtn').addEventListener('click', sendMessage);
             document.getElementById('chatInput').addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     sendMessage();
-                }
-            });
-            
-            // Modal functionality
-            document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
-            document.getElementById('modalCancelBtn').addEventListener('click', closeModal);
-            document.getElementById('modalOverlay').addEventListener('click', function(e) {
-                if (e.target === this) closeModal();
-            });
-            
-            // Auto-save markdown editor
-            document.getElementById('markdownEditor').addEventListener('input', function() {
-                if (currentIssue) {
-                    const newDescription = this.value;
-                    vscode.postMessage({ 
-                        type: 'updateIssue', 
-                        issueId: currentIssue.id, 
-                        updates: { description: newDescription } 
-                    });
                 }
             });
         }
@@ -1631,29 +1020,46 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
             vscode.postMessage({ type: 'selectIssue', issueId });
         }
 
-        // Modal functionality
-        function showModal(title, content, onConfirm) {
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalBody').innerHTML = content;
-            document.getElementById('modalOverlay').style.display = 'flex';
-            
-            // Set up confirm button
-            const confirmBtn = document.getElementById('modalConfirmBtn');
-            confirmBtn.onclick = () => {
-                if (onConfirm && onConfirm()) {
-                    closeModal();
-                }
-            };
-            
-            // Focus first input
-            setTimeout(() => {
-                const firstInput = document.querySelector('.modal-input, .modal-textarea');
-                if (firstInput) firstInput.focus();
-            }, 100);
+        function showIssue(issue) {
+            currentIssue = issue;
+            currentMode = issue.mode;
+
+            // Update mode dropdown
+            document.getElementById('modeSelector').value = issue.mode;
+
+            // Update issue list selection
+            document.querySelectorAll('.issue-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(\`[data-issue-id="\${issue.id}"]\`)?.classList.add('active');
         }
 
-        function closeModal() {
-            document.getElementById('modalOverlay').style.display = 'none';
+        function toggleIssuesPanel() {
+            const panel = document.getElementById('issuesPanel');
+            panel.classList.toggle('minimized');
+        }
+
+        function switchMode(mode) {
+            if (!currentIssue) return;
+
+            currentMode = mode;
+            currentIssue.mode = mode;
+
+            // Send mode change to extension
+            vscode.postMessage({ type: 'switchMode', mode });
+        }
+
+        function showCreateIssueDialog() {
+            const title = prompt('Issue Title:');
+            if (!title) return;
+            
+            const description = prompt('Issue Description (optional):') || '';
+            
+            vscode.postMessage({ 
+                type: 'createIssue', 
+                title: title, 
+                description: description 
+            });
         }
 
         // Chat functionality
@@ -1707,274 +1113,6 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
             chatContent.scrollTop = chatContent.scrollHeight;
         }
 
-        function showIssue(issue) {
-            currentIssue = issue;
-            currentMode = issue.mode;
-
-            // Show issue view
-            document.getElementById('issueView').style.display = 'flex';
-
-            // Update issue title
-            document.getElementById('issueTitle').textContent = issue.title;
-
-            // Update mode dropdown
-            document.getElementById('modeSelector').value = issue.mode;
-
-            // Update mode switcher (for issue view)
-            document.querySelectorAll('.mode-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.mode === issue.mode);
-            });
-
-            // Update active tab
-            showTab(issue.mode);
-
-            // Update content based on mode
-            updateContentForMode(issue);
-
-            // Update issue list selection
-            document.querySelectorAll('.issue-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            document.querySelector(\`[data-issue-id="\${issue.id}"]\`)?.classList.add('active');
-        }
-
-        function toggleIssuesPanel() {
-            const panel = document.getElementById('issuesPanel');
-            panel.classList.toggle('minimized');
-        }
-
-        function toggleTerminal() {
-            const panel = document.getElementById('terminalPanel');
-            panel.classList.toggle('visible');
-        }
-
-        function updateContentForMode(issue) {
-            // Update markdown editor
-            document.getElementById('markdownEditor').value = issue.description;
-
-            // Update TODOs
-            updateTodosList(issue.todos);
-
-            // Update mode-specific content
-            switch (issue.mode) {
-                case 'design':
-                    // Focus on markdown editor
-                    break;
-                case 'build':
-                    // Show build-specific content
-                    break;
-                case 'debug':
-                    // Show debug-specific content
-                    break;
-            }
-        }
-
-        function updateTodosList(todos) {
-            const todoList = document.getElementById('todoList');
-            todoList.innerHTML = '';
-
-            if (todos.length === 0) {
-                todoList.innerHTML = '<div style="padding: 16px; color: var(--jb-fg-secondary); text-align: center;">No TODOs yet</div>';
-                return;
-            }
-
-            todos.forEach(todo => {
-                const todoElement = document.createElement('li');
-                todoElement.className = 'todo-item';
-                todoElement.dataset.todoId = todo.id;
-                
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.className = 'todo-checkbox';
-                checkbox.checked = todo.completed;
-                checkbox.addEventListener('change', () => toggleTodo(todo.id));
-                
-                const content = document.createElement('span');
-                content.className = \`todo-content \${todo.completed ? 'completed' : ''}\`;
-                content.textContent = todo.content;
-                
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'todo-delete';
-                deleteBtn.textContent = 'Delete';
-                deleteBtn.addEventListener('click', () => deleteTodo(todo.id));
-                
-                todoElement.appendChild(checkbox);
-                todoElement.appendChild(content);
-                todoElement.appendChild(deleteBtn);
-                todoList.appendChild(todoElement);
-            });
-        }
-
-        function switchMode(mode) {
-            if (!currentIssue) return;
-
-            currentMode = mode;
-            currentIssue.mode = mode;
-
-            // Update mode switcher
-            document.querySelectorAll('.mode-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.mode === mode);
-            });
-
-            // Show corresponding tab
-            showTab(mode);
-
-            // Send mode change to extension
-            vscode.postMessage({ type: 'switchMode', mode });
-        }
-
-        function showTab(tabName) {
-            // Update tab buttons
-            document.querySelectorAll('.content-tab').forEach(tab => {
-                tab.classList.toggle('active', tab.dataset.tab === tabName);
-            });
-
-            // Update tab content
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.toggle('active', content.id === tabName + 'Tab');
-            });
-        }
-
-        function showCreateIssueDialog() {
-            showModal(
-                'Create New Issue',
-                \`
-                    <div>
-                        <label for="issueTitleInput" style="display: block; margin-bottom: 8px; color: var(--jb-fg-primary); font-weight: 500;">Issue Title:</label>
-                        <input type="text" id="issueTitleInput" class="modal-input" placeholder="Enter issue title..." autofocus>
-                        
-                        <label for="issueDescInput" style="display: block; margin-bottom: 8px; color: var(--jb-fg-primary); font-weight: 500;">Description (optional):</label>
-                        <textarea id="issueDescInput" class="modal-textarea" placeholder="Enter issue description..."></textarea>
-                    </div>
-                \`,
-                () => {
-                    const title = document.getElementById('issueTitleInput').value.trim();
-                    const description = document.getElementById('issueDescInput').value.trim();
-                    
-                    if (!title) {
-                        alert('Please enter an issue title');
-                        return false;
-                    }
-                    
-                    vscode.postMessage({ 
-                        type: 'createIssue', 
-                        title: title, 
-                        description: description 
-                    });
-                    return true;
-                }
-            );
-        }
-
-        function showAddTodoDialog() {
-            if (!currentIssue) return;
-
-            showModal(
-                'Add TODO',
-                \`
-                    <div>
-                        <label for="todoContentInput" style="display: block; margin-bottom: 8px; color: var(--jb-fg-primary); font-weight: 500;">TODO Content:</label>
-                        <textarea id="todoContentInput" class="modal-textarea" placeholder="Enter TODO content..." autofocus></textarea>
-                    </div>
-                \`,
-                () => {
-                    const content = document.getElementById('todoContentInput').value.trim();
-                    
-                    if (!content) {
-                        alert('Please enter TODO content');
-                        return false;
-                    }
-                    
-                    vscode.postMessage({ 
-                        type: 'addTodo', 
-                        issueId: currentIssue.id, 
-                        content: content 
-                    });
-                    return true;
-                }
-            );
-        }
-
-        function toggleTodo(todoId) {
-            if (!currentIssue) return;
-
-            vscode.postMessage({ 
-                type: 'toggleTodo', 
-                issueId: currentIssue.id, 
-                todoId: todoId 
-            });
-        }
-
-        function deleteTodo(todoId) {
-            if (!currentIssue) return;
-
-            if (confirm('Delete this TODO?')) {
-                vscode.postMessage({ 
-                    type: 'deleteTodo', 
-                    issueId: currentIssue.id, 
-                    todoId: todoId 
-                });
-            }
-        }
-
-        function runBuild() {
-            if (!currentIssue) return;
-
-            vscode.postMessage({ 
-                type: 'runBuild', 
-                issueId: currentIssue.id 
-            });
-
-            // Show terminal and update output
-            toggleTerminal();
-            updateTerminalOutput('Running build...');
-        }
-
-        function runTest() {
-            if (!currentIssue) return;
-
-            vscode.postMessage({ 
-                type: 'runTest', 
-                issueId: currentIssue.id 
-            });
-
-            // Show terminal and update output
-            toggleTerminal();
-            updateTerminalOutput('Running tests...');
-        }
-
-        function collectLogs() {
-            if (!currentIssue) return;
-
-            vscode.postMessage({ 
-                type: 'collectLogs', 
-                issueId: currentIssue.id 
-            });
-
-            // Show terminal and update log output
-            toggleTerminal();
-            document.getElementById('logOutput').textContent = 'Collecting logs...';
-            updateTerminalOutput('Collecting logs...');
-        }
-
-        function analyzeErrors() {
-            if (!currentIssue) return;
-
-            // Add analysis TODO
-            vscode.postMessage({ 
-                type: 'addTodo', 
-                issueId: currentIssue.id, 
-                content: 'Analyze collected logs and identify root causes' 
-            });
-        }
-
-        function updateTerminalOutput(message) {
-            const terminal = document.getElementById('terminalOutput');
-            const timestamp = new Date().toLocaleTimeString();
-            terminal.innerHTML += \`[\${timestamp}] \${message}\\n\`;
-            terminal.scrollTop = terminal.scrollHeight;
-        }
-
         // Utility functions
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -1998,7 +1136,6 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
                 return date.toLocaleDateString();
             }
         }
-
     </script>
 </body>
 </html>`;
@@ -2007,13 +1144,10 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
   private async sendDataToWebview(): Promise<void> {
     if (!this._view) return;
 
-    const issues = await this.loadIssues();
-    const currentIssue = this._currentIssue;
-
     this._view.webview.postMessage({
       type: 'updateData',
-      issues,
-      currentIssue
+      issues: this._issues,
+      currentIssue: this._currentIssue
     });
   }
 
@@ -2032,73 +1166,24 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
         return;
       }
 
-      // Determine workflow type based on mode
-      let workflowType: string;
+      // Simple response based on mode (no complex workflow logic)
       let response: string;
 
       switch (mode?.toLowerCase()) {
         case 'design':
-          // Execute design orchestration workflow
-          const designResult = await this._workflowIntegration.handleDesignModePrompt({
-            issue: currentIssue,
-            mode: 'design',
-            userPrompt: message,
-            projectPath: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
-          });
-
-          if (designResult.success) {
-            response = `🎨 Design orchestration completed! I've analyzed your request "${message}" and generated detailed project requirements. The requirements have been saved to your issue file and are ready for the build phase.`;
-          } else {
-            response = `❌ Design orchestration failed: ${designResult.error}`;
-          }
+          response = `🎨 Design mode: I understand you want to work on "${message}". This is where you would design the requirements and architecture for your project. (Workflow implementation needed)`;
           break;
 
         case 'build':
-          // Execute build generation workflow
-          const buildResult = await this._workflowIntegration.handleBuildMode({
-            issue: currentIssue,
-            mode: 'build',
-            userPrompt: message,
-            projectPath: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
-          });
-
-          if (buildResult.success) {
-            response = `🔨 Build generation completed! I've read the requirements and generated the project code. The code has been written to your project files and is ready for development.`;
-          } else {
-            response = `❌ Build generation failed: ${buildResult.error}`;
-          }
+          response = `🔨 Build mode: I understand you want to build "${message}". This is where you would generate the actual code implementation. (Workflow implementation needed)`;
           break;
 
         case 'debug':
-          // Execute debug workflow
-          const debugResult = await this._workflowIntegration.handleDebugMode({
-            issue: currentIssue,
-            mode: 'debug',
-            userPrompt: message,
-            projectPath: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
-          });
-
-          if (debugResult.success) {
-            response = `🐛 Debug fixes completed! I've identified and fixed issues in your code. The improved code has been written to your project files.`;
-          } else {
-            response = `❌ Debug fixes failed: ${debugResult.error}`;
-          }
+          response = `🐛 Debug mode: I understand you want to debug "${message}". This is where you would identify and fix issues in your code. (Workflow implementation needed)`;
           break;
 
         default:
-          // Default to design mode for new issues or when mode is not specified
-          const defaultResult = await this._workflowIntegration.handleDesignModePrompt({
-            issue: currentIssue,
-            mode: 'design',
-            userPrompt: message,
-            projectPath: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
-          });
-
-          if (defaultResult.success) {
-            response = `🎨 I've processed your request "${message}" in design mode. I've analyzed your requirements and generated a detailed project specification. You can now switch to Build mode to generate the actual code.`;
-          } else {
-            response = `❌ Processing failed: ${defaultResult.error}`;
-          }
+          response = `✨ I've received your message: "${message}". The extension skeleton is ready for you to implement your custom workflows and logic.`;
           break;
       }
 
