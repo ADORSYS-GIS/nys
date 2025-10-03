@@ -12,8 +12,6 @@ Mira transforms development from ad-hoc coding to structured, traceable workflow
 
 This ensures every piece of code has clear requirements, documented decisions, and traceable evolution.
 
-<https://github.com/user-attachments/assets/55d831bc-c612-485d-9648-1612c3aa1c6f>
-
 ## 🚀 **Key Features**
 
 ### **Issue-Driven Workflow System**
