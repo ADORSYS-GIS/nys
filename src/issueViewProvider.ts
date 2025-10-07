@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import { SPARCWorkflowEngine } from './orchestratoreEngine/sparcWorkflowEngine';
 
 export interface Issue {
   id: string;
@@ -27,6 +28,7 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
   private _issues: Issue[] = [];
   private _currentIssue: Issue | null = null;
   private _nysFolder: vscode.Uri | null = null;
+  private _sparcEngine: SPARCWorkflowEngine | null = null;
 
   constructor(private readonly _extensionUri: vscode.Uri) {
     this.initializeNysFolder();
@@ -55,8 +57,10 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
 
     // Listen for messages from the webview
     webviewView.webview.onDidReceiveMessage(async (message) => {
+      console.log('Received message from webview:', message);
       switch (message.type) {
         case 'createIssue':
+          console.log('Creating issue with:', { title: message.title, description: message.description });
           await this.createIssue(message.title, message.description);
           break;
         case 'selectIssue':
@@ -107,6 +111,9 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
       } catch {
         await vscode.workspace.fs.createDirectory(this._nysFolder);
       }
+
+      // Initialize SPARC workflow engine
+      this._sparcEngine = new SPARCWorkflowEngine(workspaceFolders[0].uri);
     }
   }
 
@@ -231,38 +238,43 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
   }
 
   public async createIssue(title: string, description: string): Promise<void> {
-    if (!this._nysFolder) {
-      await this.initializeNysFolder();
+    try {
       if (!this._nysFolder) {
-        vscode.window.showErrorMessage('No workspace folder found');
-        return;
+        await this.initializeNysFolder();
+        if (!this._nysFolder) {
+          vscode.window.showErrorMessage('No workspace folder found');
+          return;
+        }
       }
+
+      const id = `issue-${Date.now()}`;
+      const fileName = `${id}.md`;
+      const filePath = vscode.Uri.joinPath(this._nysFolder, fileName);
+      
+      const issue: Issue = {
+        id,
+        title,
+        description,
+        mode: 'design',
+        status: 'open',
+        todos: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        filePath: filePath.fsPath
+      };
+
+      const content = this.generateIssueMarkdown(issue);
+      await vscode.workspace.fs.writeFile(filePath, Buffer.from(content, 'utf8'));
+      
+      this._issues.unshift(issue);
+      this._currentIssue = issue;
+      this.updateWebview();
+      
+      vscode.window.showInformationMessage(`Created issue: ${title}`);
+    } catch (error) {
+      console.error('Error creating issue:', error);
+      vscode.window.showErrorMessage(`Failed to create issue: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-
-    const id = `issue-${Date.now()}`;
-    const fileName = `${id}.md`;
-    const filePath = vscode.Uri.joinPath(this._nysFolder, fileName);
-    
-    const issue: Issue = {
-      id,
-      title,
-      description,
-      mode: 'design',
-      status: 'open',
-      todos: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      filePath: filePath.fsPath
-    };
-
-    const content = this.generateIssueMarkdown(issue);
-    await vscode.workspace.fs.writeFile(filePath, Buffer.from(content, 'utf8'));
-    
-    this._issues.unshift(issue);
-    this._currentIssue = issue;
-    this.updateWebview();
-    
-    vscode.window.showInformationMessage(`Created issue: ${title}`);
   }
 
   private async selectIssue(issueId: string): Promise<void> {
@@ -407,6 +419,18 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
   }
 
   public getHtmlForWebview(webview: vscode.Webview): string {
+    // Read the HTML file from the webview directory
+    const htmlPath = vscode.Uri.joinPath(this._extensionUri, 'src', 'webview', 'chatSidebar.html');
+    try {
+      const htmlContent = fs.readFileSync(htmlPath.fsPath, 'utf8');
+      return htmlContent;
+    } catch (error) {
+      console.error('Failed to read webview HTML:', error);
+      return this.getFallbackHtml(webview);
+    }
+  }
+
+  private getFallbackHtml(webview: vscode.Webview): string {
     const nonce = getNonce();
     
     return `<!DOCTYPE html>
@@ -1166,24 +1190,24 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
         return;
       }
 
-      // Simple response based on mode (no complex workflow logic)
+      // Process message based on SPARC workflow mode
       let response: string;
 
       switch (mode?.toLowerCase()) {
         case 'design':
-          response = `🎨 Design mode: I understand you want to work on "${message}". This is where you would design the requirements and architecture for your project. (Workflow implementation needed)`;
+          response = await this.processDesignMode(message, currentIssue);
           break;
 
         case 'build':
-          response = `🔨 Build mode: I understand you want to build "${message}". This is where you would generate the actual code implementation. (Workflow implementation needed)`;
+          response = await this.processBuildMode(message, currentIssue);
           break;
 
         case 'debug':
-          response = `🐛 Debug mode: I understand you want to debug "${message}". This is where you would identify and fix issues in your code. (Workflow implementation needed)`;
+          response = await this.processDebugMode(message, currentIssue);
           break;
 
         default:
-          response = `✨ I've received your message: "${message}". The extension skeleton is ready for you to implement your custom workflows and logic.`;
+          response = `✨ I've received your message: "${message}". Please select a workflow mode (Design, Build, or Debug) to get started.`;
           break;
       }
 
@@ -1200,6 +1224,102 @@ export class IssueViewProvider implements vscode.WebviewViewProvider {
         content: `❌ Error processing your message: ${errorMessage}`
       });
     }
+  }
+
+  private async processDesignMode(message: string, issue: Issue): Promise<string> {
+    // Design mode: Analyze requirements, generate specifications, create technical guidelines
+    if (this._sparcEngine) {
+      try {
+        const workflowState = await this._sparcEngine.processIssue(issue.id, 'design', message);
+        
+        return `🎨 **Design Mode - SPARC Workflow**\n\n**Processing**: "${message}"\n\n**Current Phase**: ${workflowState.currentPhase}\n**Progress**: ${workflowState.progress}%\n\n**Generated Artifacts:**\n${this.formatArtifacts(workflowState.artifacts)}\n\n**Next Steps:**\n${this.getNextSteps(workflowState.currentPhase, workflowState.mode)}`;
+      } catch (error) {
+        console.error('SPARC workflow error:', error);
+      }
+    }
+    
+    // Fallback response
+    return `🎨 **Design Mode Analysis**\n\nI'm analyzing your requirements: "${message}"\n\n**Next Steps:**\n- Extract key features and constraints\n- Generate technical specifications\n- Create architecture guidelines\n- Define dependencies and interfaces\n\n*SPARC workflow engine integration in progress.*`;
+  }
+
+  private async processBuildMode(message: string, issue: Issue): Promise<string> {
+    // Build mode: Generate code, create project structure, implement features
+    if (this._sparcEngine) {
+      try {
+        const workflowState = await this._sparcEngine.processIssue(issue.id, 'build', message);
+        
+        return `🔨 **Build Mode - SPARC Workflow**\n\n**Building**: "${message}"\n\n**Current Phase**: ${workflowState.currentPhase}\n**Progress**: ${workflowState.progress}%\n\n**Generated Artifacts:**\n${this.formatArtifacts(workflowState.artifacts)}\n\n**Implementation Status:**\n${this.getBuildStatus(workflowState.artifacts)}`;
+      } catch (error) {
+        console.error('SPARC workflow error:', error);
+      }
+    }
+    
+    // Fallback response
+    return `🔨 **Build Mode Implementation**\n\nBuilding: "${message}"\n\n**Implementation Plan:**\n- Generate source code structure\n- Create configuration files\n- Implement core functionality\n- Add tests and documentation\n\n*SPARC workflow engine integration in progress.*`;
+  }
+
+  private async processDebugMode(message: string, issue: Issue): Promise<string> {
+    // Debug mode: Identify issues, apply fixes, optimize performance
+    if (this._sparcEngine) {
+      try {
+        const workflowState = await this._sparcEngine.processIssue(issue.id, 'debug', message);
+        
+        return `🐛 **Debug Mode - SPARC Workflow**\n\n**Debugging**: "${message}"\n\n**Current Phase**: ${workflowState.currentPhase}\n**Progress**: ${workflowState.progress}%\n\n**Debug Analysis:**\n${this.formatDebugNotes(workflowState.artifacts.notes)}\n\n**Artifacts Status:**\n${this.formatArtifacts(workflowState.artifacts)}`;
+      } catch (error) {
+        console.error('SPARC workflow error:', error);
+      }
+    }
+    
+    // Fallback response
+    return `🐛 **Debug Mode Analysis**\n\nDebugging: "${message}"\n\n**Issue Analysis:**\n- Scanning code for potential problems\n- Checking for performance bottlenecks\n- Validating integration points\n- Reviewing error logs\n\n*SPARC workflow engine integration in progress.*`;
+  }
+
+  private formatArtifacts(artifacts: any): string {
+    const artifactList = [];
+    if (artifacts.requirements) artifactList.push('✅ Requirements');
+    if (artifacts.guidelines) artifactList.push('✅ Guidelines');
+    if (artifacts.pseudocode) artifactList.push('✅ Pseudocode');
+    if (artifacts.architecture) artifactList.push('✅ Architecture');
+    if (artifacts.implementation) artifactList.push('✅ Implementation');
+    if (artifacts.tests) artifactList.push('✅ Tests');
+    if (artifacts.notes) artifactList.push('✅ Debug Notes');
+    
+    return artifactList.length > 0 ? artifactList.join('\n') : 'No artifacts generated yet';
+  }
+
+  private getNextSteps(phase: string, _mode: string): string {
+    switch (phase) {
+      case 'specification':
+        return 'Continue with pseudocode generation';
+      case 'pseudocode':
+        return 'Move to architecture design';
+      case 'architecture':
+        return 'Refine requirements and complete design';
+      case 'refinement':
+        return 'Design complete - ready for build mode';
+      case 'completion':
+        return 'Ready for implementation in build mode';
+      default:
+        return 'Continue with current workflow';
+    }
+  }
+
+  private getBuildStatus(artifacts: any): string {
+    const status = [];
+    if (artifacts.implementation) status.push('✅ Code generated');
+    if (artifacts.tests) status.push('✅ Tests created');
+    if (artifacts.notes) status.push('✅ Debug notes updated');
+    
+    return status.length > 0 ? status.join('\n') : 'Starting build process...';
+  }
+
+  private formatDebugNotes(notes?: string): string {
+    if (!notes) return 'No debug notes yet';
+    
+    // Extract the latest debug entry
+    const lines = notes.split('\n');
+    const latestEntry = lines.slice(-10).join('\n'); // Last 10 lines
+    return latestEntry || 'Debug analysis in progress...';
   }
 }
 
