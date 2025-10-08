@@ -31,7 +31,9 @@
     "Other"
   ],
   "activationEvents": [
-    "onView:miraSidebarChat.issueView"
+    "onView:miraSidebarChat.issueView",
+    "onCommand:mira.refreshOpenAIKey",
+    "onCommand:vscode-mcp-client.openIssuePanel"
   ],
   "icon": "images/ext.jpeg",
   "main": "./out/extension.js",
@@ -49,11 +51,17 @@
       "mira-sidebar": [
         {
           "id": "miraSidebarChat.issueView",
-          "name": "Issues",
+          "name": "Mira Assistant",
           "type": "webview"
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "miraSidebarChat.issueView",
+        "contents": "Welcome to Mira! 🚀\n\n[Get Started](command:vscode-mcp-client.createIssue)\n[Configure AI](command:mira.refreshOpenAIKey)\n\nMira is your AI-powered coding assistant that helps you design, build, and debug projects using the SPARC workflow.\n\n**Features:**\n• 🎯 Issue-driven development\n• 🤖 AI-powered code generation\n• 🔧 Full build and execution\n• 📊 Comprehensive reporting\n\nClick 'Get Started' to create your first issue!"
+      }
+    ],
     "commands": [
       {
         "command": "vscode-mcp-client.openIssuePanel",

@@ -55,20 +55,22 @@ export class SimpleGraphSPARCWorkflow {
    * Initialize all workflow nodes
    */
   private initializeNodes(): void {
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri || vscode.Uri.file(process.cwd());
+    
     // Design mode nodes
-    this.nodes.set('specification', new SpecificationNode());
-    this.nodes.set('pseudocode', new PseudocodeNode());
-    this.nodes.set('architecture', new ArchitectureNode());
-    this.nodes.set('refinement', new RefinementNode());
-    this.nodes.set('completion', new CompletionNode());
+    this.nodes.set('specification', new SpecificationNode(workspaceRoot));
+    this.nodes.set('pseudocode', new PseudocodeNode(workspaceRoot));
+    this.nodes.set('architecture', new ArchitectureNode(workspaceRoot));
+    this.nodes.set('refinement', new RefinementNode(workspaceRoot));
+    this.nodes.set('completion', new CompletionNode(workspaceRoot));
     
     // Build mode nodes
-    this.nodes.set('implementation', new ImplementationNode());
-    this.nodes.set('testing', new TestingNode());
+    this.nodes.set('implementation', new ImplementationNode(workspaceRoot));
+    this.nodes.set('testing', new TestingNode(workspaceRoot));
     
     // Debug mode nodes
-    this.nodes.set('analysis', new AnalysisNode());
-    this.nodes.set('fix_generation', new FixGenerationNode());
+    this.nodes.set('analysis', new AnalysisNode(workspaceRoot));
+    this.nodes.set('fix_generation', new FixGenerationNode(workspaceRoot));
   }
   
   /**

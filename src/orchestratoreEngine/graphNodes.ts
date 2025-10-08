@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { SPARCWorkflowState } from './sparcWorkflowEngine';
 import { AIService, AIRequest } from './aiService';
+import { CodeExecutionEngine } from './codeExecutionEngine';
 
 /**
  * Graph Node Types for SPARC Workflow Orchestration
@@ -37,6 +38,7 @@ export interface GraphNodeState {
     decisions: Decision[];
     lastAIResponse?: any;
     confidence?: number;
+    buildResult?: any;
   };
   
   // Memory and context
@@ -132,13 +134,15 @@ export abstract class BaseGraphNode {
   protected type: string;
   protected status: 'active' | 'completed' | 'pending' | 'blocked';
   protected aiService: AIService;
+  protected codeExecutionEngine: CodeExecutionEngine;
   
-  constructor(id: string, name: string, type: string) {
+  constructor(id: string, name: string, type: string, workspaceRoot: vscode.Uri) {
     this.id = id;
     this.name = name;
     this.type = type;
     this.status = 'pending';
     this.aiService = new AIService();
+    this.codeExecutionEngine = new CodeExecutionEngine(workspaceRoot);
   }
   
   abstract execute(state: GraphNodeState): Promise<GraphNodeState>;
@@ -188,8 +192,8 @@ export abstract class BaseGraphNode {
  */
 
 export class SpecificationNode extends BaseGraphNode {
-  constructor() {
-    super('specification', 'Specification Phase', 'design');
+  constructor(workspaceRoot: vscode.Uri) {
+    super('specification', 'Specification Phase', 'design', workspaceRoot);
   }
   
   async execute(state: GraphNodeState): Promise<GraphNodeState> {
@@ -276,8 +280,8 @@ ${description}
 }
 
 export class PseudocodeNode extends BaseGraphNode {
-  constructor() {
-    super('pseudocode', 'Pseudocode Phase', 'design');
+  constructor(workspaceRoot: vscode.Uri) {
+    super('pseudocode', 'Pseudocode Phase', 'design', workspaceRoot);
   }
   
   async execute(state: GraphNodeState): Promise<GraphNodeState> {
@@ -389,8 +393,8 @@ END FUNCTION
 }
 
 export class ArchitectureNode extends BaseGraphNode {
-  constructor() {
-    super('architecture', 'Architecture Phase', 'design');
+  constructor(workspaceRoot: vscode.Uri) {
+    super('architecture', 'Architecture Phase', 'design', workspaceRoot);
   }
   
   async execute(state: GraphNodeState): Promise<GraphNodeState> {
@@ -519,8 +523,8 @@ DELETE /api/users/:id       - Delete user
 }
 
 export class RefinementNode extends BaseGraphNode {
-  constructor() {
-    super('refinement', 'Refinement Phase', 'design');
+  constructor(workspaceRoot: vscode.Uri) {
+    super('refinement', 'Refinement Phase', 'design', workspaceRoot);
   }
   
   async execute(state: GraphNodeState): Promise<GraphNodeState> {
@@ -584,8 +588,8 @@ export class RefinementNode extends BaseGraphNode {
 }
 
 export class CompletionNode extends BaseGraphNode {
-  constructor() {
-    super('completion', 'Completion Phase', 'design');
+  constructor(workspaceRoot: vscode.Uri) {
+    super('completion', 'Completion Phase', 'design', workspaceRoot);
   }
   
   async execute(state: GraphNodeState): Promise<GraphNodeState> {
@@ -662,8 +666,8 @@ The design phase is now complete and ready for implementation.`;
  */
 
 export class ImplementationNode extends BaseGraphNode {
-  constructor() {
-    super('implementation', 'Implementation Phase', 'build');
+  constructor(workspaceRoot: vscode.Uri) {
+    super('implementation', 'Implementation Phase', 'build', workspaceRoot);
   }
   
   async execute(state: GraphNodeState): Promise<GraphNodeState> {
@@ -685,35 +689,108 @@ export class ImplementationNode extends BaseGraphNode {
       const aiResponse = await this.aiService.processRequest(aiRequest);
       const implementation = aiResponse.content;
       
-      // Update state with AI-generated implementation
-      state = this.addArtifact(state, 'implementation', implementation);
+      // Execute the build workflow: write files, build, run, test
+      console.log('[ImplementationNode] Starting code execution workflow...');
+      const buildResult = await this.codeExecutionEngine.executeBuildWorkflow(
+        state.userInput,
+        state.issueDescription,
+        implementation
+      );
+      
+      // Create comprehensive implementation report
+      const implementationReport = this.createImplementationReport(implementation, buildResult);
+      
+      // Update state with AI-generated implementation and execution results
+      state = this.addArtifact(state, 'implementation', implementationReport);
       state = this.updateProgress(state, 40);
       state = this.addAgentAction(
         state,
         'build-agent',
-        'generate_implementation',
+        'generate_and_execute_implementation',
         state.artifacts.architecture || '',
-        implementation
+        JSON.stringify(buildResult)
       );
       
-      // Add AI context to state
+      // Add AI context and execution results to state
       state.aiContext = {
         ...state.aiContext,
         lastAIResponse: aiResponse,
-        confidence: aiResponse.confidence
+        confidence: aiResponse.confidence,
+        buildResult: buildResult
       };
       
       // Move to next phase
       state.currentPhase = 'testing';
       this.status = 'completed';
       
-      this.logExecution(this.id, 'Implementation phase completed', implementation);
+      this.logExecution(this.id, 'Implementation phase completed with execution', buildResult);
       return state;
     } catch (error) {
       this.logExecution(this.id, 'Implementation phase failed', error);
       this.status = 'blocked';
       throw error;
     }
+  }
+  
+  /**
+   * Create a comprehensive implementation report
+   */
+  private createImplementationReport(generatedCode: string, buildResult: any): string {
+    let report = `# Implementation Report\n\n`;
+    
+    report += `## Generated Code\n\`\`\`\n${generatedCode}\n\`\`\`\n\n`;
+    
+    report += `## Execution Results\n\n`;
+    report += `**Status**: ${buildResult.success ? '✅ Success' : '❌ Failed'}\n\n`;
+    
+    if (buildResult.filesCreated && buildResult.filesCreated.length > 0) {
+      report += `### Files Created\n`;
+      buildResult.filesCreated.forEach((file: any) => {
+        report += `- \`${file.path}\` (${file.language})\n`;
+      });
+      report += `\n`;
+    }
+    
+    if (buildResult.commandsExecuted && buildResult.commandsExecuted.length > 0) {
+      report += `### Commands Executed\n`;
+      buildResult.commandsExecuted.forEach((cmd: any) => {
+        const status = cmd.success ? '✅' : '❌';
+        report += `- ${status} \`${cmd.command}\` (${cmd.duration}ms)\n`;
+        if (cmd.stdout) {
+          report += `  **Output**: \`${cmd.stdout.substring(0, 100)}${cmd.stdout.length > 100 ? '...' : ''}\`\n`;
+        }
+        if (cmd.stderr) {
+          report += `  **Error**: \`${cmd.stderr.substring(0, 100)}${cmd.stderr.length > 100 ? '...' : ''}\`\n`;
+        }
+      });
+      report += `\n`;
+    }
+    
+    if (buildResult.errors && buildResult.errors.length > 0) {
+      report += `### Errors\n`;
+      buildResult.errors.forEach((error: string) => {
+        report += `- ❌ ${error}\n`;
+      });
+      report += `\n`;
+    }
+    
+    if (buildResult.warnings && buildResult.warnings.length > 0) {
+      report += `### Warnings\n`;
+      buildResult.warnings.forEach((warning: string) => {
+        report += `- ⚠️ ${warning}\n`;
+      });
+      report += `\n`;
+    }
+    
+    if (buildResult.nextSteps && buildResult.nextSteps.length > 0) {
+      report += `### Next Steps\n`;
+      buildResult.nextSteps.forEach((step: string) => {
+        report += `- ${step}\n`;
+      });
+      report += `\n`;
+    }
+    
+    return report;
   }
   
   private async generateImplementation(_architecture: string): Promise<string> {
@@ -815,8 +892,8 @@ export class UserModel {
 }
 
 export class TestingNode extends BaseGraphNode {
-  constructor() {
-    super('testing', 'Testing Phase', 'build');
+  constructor(workspaceRoot: vscode.Uri) {
+    super('testing', 'Testing Phase', 'build', workspaceRoot);
   }
   
   async execute(state: GraphNodeState): Promise<GraphNodeState> {
@@ -1023,8 +1100,8 @@ module.exports = {
  */
 
 export class AnalysisNode extends BaseGraphNode {
-  constructor() {
-    super('analysis', 'Analysis Phase', 'debug');
+  constructor(workspaceRoot: vscode.Uri) {
+    super('analysis', 'Analysis Phase', 'debug', workspaceRoot);
   }
   
   async execute(state: GraphNodeState): Promise<GraphNodeState> {
@@ -1115,8 +1192,8 @@ export class AnalysisNode extends BaseGraphNode {
 }
 
 export class FixGenerationNode extends BaseGraphNode {
-  constructor() {
-    super('fix_generation', 'Fix Generation Phase', 'debug');
+  constructor(workspaceRoot: vscode.Uri) {
+    super('fix_generation', 'Fix Generation Phase', 'debug', workspaceRoot);
   }
   
   async execute(state: GraphNodeState): Promise<GraphNodeState> {
