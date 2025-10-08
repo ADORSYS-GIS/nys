@@ -31,7 +31,9 @@
     "Other"
   ],
   "activationEvents": [
-    "onView:miraSidebarChat.issueView"
+    "onView:miraSidebarChat.issueView",
+    "onCommand:mira.refreshOpenAIKey",
+    "onCommand:vscode-mcp-client.openIssuePanel"
   ],
   "icon": "images/ext.jpeg",
   "main": "./out/extension.js",
@@ -49,11 +51,17 @@
       "mira-sidebar": [
         {
           "id": "miraSidebarChat.issueView",
-          "name": "Issues",
+          "name": "Mira Assistant",
           "type": "webview"
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "miraSidebarChat.issueView",
+        "contents": "Welcome to Mira! 🚀\n\n[Get Started](command:vscode-mcp-client.createIssue)\n[Configure AI](command:mira.refreshOpenAIKey)\n\nMira is your AI-powered coding assistant that helps you design, build, and debug projects using the SPARC workflow.\n\n**Features:**\n• 🎯 Issue-driven development\n• 🤖 AI-powered code generation\n• 🔧 Full build and execution\n• 📊 Comprehensive reporting\n\nClick 'Get Started' to create your first issue!"
+      }
+    ],
     "commands": [
       {
         "command": "vscode-mcp-client.openIssuePanel",
@@ -86,6 +94,10 @@
       {
         "command": "vscode-mcp-client.collectLogs",
         "title": "Mira: Collect Logs"
+      },
+      {
+        "command": "mira.refreshOpenAIKey",
+        "title": "Mira: Refresh OpenAI API Key"
       }
     ],
     "configuration": {
@@ -95,6 +107,12 @@
           "type": "boolean",
           "default": false,
           "description": "Automatically initialize Mira on extension startup"
+        },
+        "mira.openaiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI API key for AI-powered workflow orchestration. Get your key from https://platform.openai.com/api-keys",
+          "markdownDescription": "OpenAI API key for AI-powered workflow orchestration. Get your key from [OpenAI Platform](https://platform.openai.com/api-keys). This will be stored securely by VS Code."
         }
       }
     }
@@ -114,12 +132,16 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.60.0",
     "@types/node": "16.x",
+    "@types/vscode": "^1.60.0",
     "@typescript-eslint/eslint-plugin": "^5.31.0",
     "@typescript-eslint/parser": "^5.31.0",
     "eslint": "^8.20.0",
     "typescript": "^4.4.4"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@langchain/core": "^0.1.63",
+    "@langchain/langgraph": "^0.0.20",
+    "openai": "^6.2.0"
+  }
 }
