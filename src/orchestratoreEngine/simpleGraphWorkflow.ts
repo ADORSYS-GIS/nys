@@ -248,6 +248,7 @@ export class SimpleGraphSPARCWorkflow {
       progress: 0,
       issueTitle: input.issueTitle,
       issueDescription: input.issueDescription,
+      userInput: input.userInput,
       artifacts: {},
       aiContext: {
         currentAgent: 'orchestration-agent',

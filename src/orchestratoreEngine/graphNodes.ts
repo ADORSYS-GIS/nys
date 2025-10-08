@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { SPARCWorkflowState } from './sparcWorkflowEngine';
+import { AIService, AIRequest } from './aiService';
 
 /**
  * Graph Node Types for SPARC Workflow Orchestration
@@ -15,6 +16,7 @@ export interface GraphNodeState {
   // Issue context
   issueTitle: string;
   issueDescription: string;
+  userInput: string;
   
   // Generated artifacts
   artifacts: {
@@ -33,6 +35,8 @@ export interface GraphNodeState {
     agentHistory: AgentAction[];
     toolCalls: ToolCall[];
     decisions: Decision[];
+    lastAIResponse?: any;
+    confidence?: number;
   };
   
   // Memory and context
@@ -127,12 +131,14 @@ export abstract class BaseGraphNode {
   protected name: string;
   protected type: string;
   protected status: 'active' | 'completed' | 'pending' | 'blocked';
+  protected aiService: AIService;
   
   constructor(id: string, name: string, type: string) {
     this.id = id;
     this.name = name;
     this.type = type;
     this.status = 'pending';
+    this.aiService = new AIService();
   }
   
   abstract execute(state: GraphNodeState): Promise<GraphNodeState>;
@@ -190,10 +196,22 @@ export class SpecificationNode extends BaseGraphNode {
     this.logExecution(this.id, 'Starting specification phase', state.issueDescription);
     
     try {
-      // Generate requirements from issue description
-      const requirements = await this.generateRequirements(state.issueDescription);
+      // Use AI service to generate requirements based on user input
+      const aiRequest: AIRequest = {
+        userInput: state.userInput,
+        mode: state.currentMode,
+        phase: 'specification',
+        context: {
+          issueTitle: state.issueTitle,
+          issueDescription: state.issueDescription,
+          existingArtifacts: state.artifacts
+        }
+      };
       
-      // Update state with requirements
+      const aiResponse = await this.aiService.processRequest(aiRequest);
+      const requirements = aiResponse.content;
+      
+      // Update state with AI-generated requirements
       state = this.addArtifact(state, 'requirements', requirements);
       state = this.updateProgress(state, 20);
       state = this.addAgentAction(
@@ -203,6 +221,13 @@ export class SpecificationNode extends BaseGraphNode {
         state.issueDescription,
         requirements
       );
+      
+      // Add AI context to state
+      state.aiContext = {
+        ...state.aiContext,
+        lastAIResponse: aiResponse,
+        confidence: aiResponse.confidence
+      };
       
       // Move to next phase
       state.currentPhase = 'pseudocode';
@@ -259,10 +284,22 @@ export class PseudocodeNode extends BaseGraphNode {
     this.logExecution(this.id, 'Starting pseudocode phase', state.artifacts.requirements);
     
     try {
-      // Generate pseudocode from requirements
-      const pseudocode = await this.generatePseudocode(state.artifacts.requirements || '');
+      // Use AI service to generate pseudocode based on user input
+      const aiRequest: AIRequest = {
+        userInput: state.userInput,
+        mode: state.currentMode,
+        phase: 'pseudocode',
+        context: {
+          issueTitle: state.issueTitle,
+          issueDescription: state.issueDescription,
+          existingArtifacts: state.artifacts
+        }
+      };
       
-      // Update state with pseudocode
+      const aiResponse = await this.aiService.processRequest(aiRequest);
+      const pseudocode = aiResponse.content;
+      
+      // Update state with AI-generated pseudocode
       state = this.addArtifact(state, 'pseudocode', pseudocode);
       state = this.updateProgress(state, 40);
       state = this.addAgentAction(
@@ -272,6 +309,13 @@ export class PseudocodeNode extends BaseGraphNode {
         state.artifacts.requirements || '',
         pseudocode
       );
+      
+      // Add AI context to state
+      state.aiContext = {
+        ...state.aiContext,
+        lastAIResponse: aiResponse,
+        confidence: aiResponse.confidence
+      };
       
       // Move to next phase
       state.currentPhase = 'architecture';
@@ -353,13 +397,23 @@ export class ArchitectureNode extends BaseGraphNode {
     this.logExecution(this.id, 'Starting architecture phase', state.artifacts.pseudocode);
     
     try {
-      // Generate architecture from pseudocode
-      const architecture = await this.generateArchitecture(state.artifacts.pseudocode || '');
-      const guidelines = await this.generateGuidelines(state.artifacts.requirements || '');
+      // Use AI service to generate architecture based on user input
+      const aiRequest: AIRequest = {
+        userInput: state.userInput,
+        mode: state.currentMode,
+        phase: 'architecture',
+        context: {
+          issueTitle: state.issueTitle,
+          issueDescription: state.issueDescription,
+          existingArtifacts: state.artifacts
+        }
+      };
       
-      // Update state with architecture and guidelines
+      const aiResponse = await this.aiService.processRequest(aiRequest);
+      const architecture = aiResponse.content;
+      
+      // Update state with AI-generated architecture
       state = this.addArtifact(state, 'architecture', architecture);
-      state = this.addArtifact(state, 'guidelines', guidelines);
       state = this.updateProgress(state, 60);
       state = this.addAgentAction(
         state,
@@ -368,6 +422,13 @@ export class ArchitectureNode extends BaseGraphNode {
         state.artifacts.pseudocode || '',
         architecture
       );
+      
+      // Add AI context to state
+      state.aiContext = {
+        ...state.aiContext,
+        lastAIResponse: aiResponse,
+        confidence: aiResponse.confidence
+      };
       
       // Move to next phase
       state.currentPhase = 'refinement';
@@ -609,10 +670,22 @@ export class ImplementationNode extends BaseGraphNode {
     this.logExecution(this.id, 'Starting implementation phase', state.artifacts.architecture);
     
     try {
-      // Generate implementation code
-      const implementation = await this.generateImplementation(state.artifacts.architecture || '');
+      // Use AI service to generate implementation based on user input
+      const aiRequest: AIRequest = {
+        userInput: state.userInput,
+        mode: state.currentMode,
+        phase: 'implementation',
+        context: {
+          issueTitle: state.issueTitle,
+          issueDescription: state.issueDescription,
+          existingArtifacts: state.artifacts
+        }
+      };
       
-      // Update state with implementation
+      const aiResponse = await this.aiService.processRequest(aiRequest);
+      const implementation = aiResponse.content;
+      
+      // Update state with AI-generated implementation
       state = this.addArtifact(state, 'implementation', implementation);
       state = this.updateProgress(state, 40);
       state = this.addAgentAction(
@@ -622,6 +695,13 @@ export class ImplementationNode extends BaseGraphNode {
         state.artifacts.architecture || '',
         implementation
       );
+      
+      // Add AI context to state
+      state.aiContext = {
+        ...state.aiContext,
+        lastAIResponse: aiResponse,
+        confidence: aiResponse.confidence
+      };
       
       // Move to next phase
       state.currentPhase = 'testing';

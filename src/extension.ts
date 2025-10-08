@@ -1,9 +1,13 @@
 import * as vscode from 'vscode';
 import { IssueViewProvider } from './issueViewProvider';
+import { AIService } from './orchestratoreEngine/aiService';
 
 export function activate(context: vscode.ExtensionContext) {
   // Register Mira sidebar view provider
   const issueProvider = new IssueViewProvider(context.extensionUri);
+  
+  // Initialize AI service
+  const aiService = new AIService();
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(IssueViewProvider.viewType, issueProvider)
@@ -68,6 +72,18 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.showInformationMessage('Log collection command executed');
   });
 
+  // Register OpenAI API key refresh command
+  let refreshOpenAIKeyCommand = vscode.commands.registerCommand('mira.refreshOpenAIKey', async () => {
+    aiService.refreshApiKey();
+    const status = aiService.getStatus();
+    
+    if (status.initialized) {
+      vscode.window.showInformationMessage(`OpenAI API key refreshed successfully (Source: ${status.source})`);
+    } else {
+      vscode.window.showWarningMessage('OpenAI API key not found. Please set "mira.openaiApiKey" in VS Code settings.');
+    }
+  });
+
   // Add all commands to subscriptions
   context.subscriptions.push(
     createIssueCommand,
@@ -76,7 +92,24 @@ export function activate(context: vscode.ExtensionContext) {
     switchToDebugModeCommand,
     runBuildCommand,
     runTestsCommand,
-    collectLogsCommand
+    collectLogsCommand,
+    refreshOpenAIKeyCommand
+  );
+
+  // Listen for configuration changes to refresh AI service
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((event) => {
+      if (event.affectsConfiguration('mira.openaiApiKey')) {
+        console.log('[Extension] OpenAI API key configuration changed, refreshing AI service...');
+        aiService.refreshApiKey();
+        const status = aiService.getStatus();
+        if (status.initialized) {
+          console.log(`[Extension] AI service refreshed successfully (Source: ${status.source})`);
+        } else {
+          console.warn('[Extension] AI service refresh failed - no valid API key found');
+        }
+      }
+    })
   );
 
   console.log('Mira extension activated successfully!');

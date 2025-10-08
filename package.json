@@ -86,6 +86,10 @@
       {
         "command": "vscode-mcp-client.collectLogs",
         "title": "Mira: Collect Logs"
+      },
+      {
+        "command": "mira.refreshOpenAIKey",
+        "title": "Mira: Refresh OpenAI API Key"
       }
     ],
     "configuration": {
@@ -95,6 +99,12 @@
           "type": "boolean",
           "default": false,
           "description": "Automatically initialize Mira on extension startup"
+        },
+        "mira.openaiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI API key for AI-powered workflow orchestration. Get your key from https://platform.openai.com/api-keys",
+          "markdownDescription": "OpenAI API key for AI-powered workflow orchestration. Get your key from [OpenAI Platform](https://platform.openai.com/api-keys). This will be stored securely by VS Code."
         }
       }
     }
@@ -123,6 +133,7 @@
   },
   "dependencies": {
     "@langchain/core": "^0.1.63",
-    "@langchain/langgraph": "^0.0.20"
+    "@langchain/langgraph": "^0.0.20",
+    "openai": "^6.2.0"
   }
 }
