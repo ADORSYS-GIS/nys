@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <!-- Chat bubble with modern design -->
+  <path d="M4 3h12c2.21 0 4 1.79 4 4v4c0 2.21-1.79 4-4 4H9l-4 3v-3H4c-2.21 0-4-1.79-4-4V7c0-2.21 1.79-4 4-4z" 
+        fill="currentColor" 
+        opacity="0.1"/>
+  
+  <!-- Chat bubble outline -->
+  <path d="M4 3h12c2.21 0 4 1.79 4 4v4c0 2.21-1.79 4-4 4H9l-4 3v-3H4c-2.21 0-4-1.79-4-4V7c0-2.21 1.79-4 4-4z" 
+        fill="none" 
+        stroke="currentColor" 
+        stroke-width="1.2"/>
+  
+  <!-- AI/Coding symbol - simplified gear with sparkle -->
+  <g transform="translate(14, 6)">
+    <!-- Sparkle/star for AI -->
+    <path d="M2 0l.5 1 1 .5-1 .5-.5 1-.5-1-1-.5 1-.5.5-1z" fill="currentColor"/>
+  </g>
+  
+  <!-- Code brackets -->
+  <path d="M6 9l-1 1 1 1M10 9l1 1-1 1" 
+        stroke="currentColor" 
+        stroke-width="1.2" 
+        stroke-linecap="round" 
+        fill="none"/>
+  
+  <!-- Three dots for conversation -->
+  <g transform="translate(6, 13)">
+    <circle cx="0" cy="0" r="0.6" fill="currentColor" opacity="0.7"/>
+    <circle cx="2" cy="0" r="0.6" fill="currentColor" opacity="0.7"/>
+    <circle cx="4" cy="0" r="0.6" fill="currentColor" opacity="0.7"/>
+  </g>
+</svg>

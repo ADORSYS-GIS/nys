@@ -1,0 +1,1158 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://github.com/ADORSYS-GIS/nys/technical/SPARC_GRAPH_ARCHITECTURE/">
+      
+      
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.22">
+    
+    
+      
+        <title>SPARC Graph Architecture - AI-Assisted Workflow Orchestration - Nys - SPARC Workflow-Driven Assistant Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.84d31ad4.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#sparc-graph-architecture-ai-assisted-workflow-orchestration" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Nys - SPARC Workflow-Driven Assistant Docs" class="md-header__button md-logo" aria-label="Nys - SPARC Workflow-Driven Assistant Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Nys - SPARC Workflow-Driven Assistant Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              SPARC Graph Architecture - AI-Assisted Workflow Orchestration
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../readme-pages/Overview/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  README Split
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Nys - SPARC Workflow-Driven Assistant Docs" class="md-nav__button md-logo" aria-label="Nys - SPARC Workflow-Driven Assistant Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Nys - SPARC Workflow-Driven Assistant Docs
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    <a href="../../readme-pages/Overview/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    README Split
+    
+  </span>
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="sparc-graph-architecture-ai-assisted-workflow-orchestration">SPARC Graph Architecture - AI-Assisted Workflow Orchestration</h1>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>The SPARC Graph Architecture represents a sophisticated orchestration system that combines the SPARC workflow methodology with AI assistance, LangGraph state management, and MCP (Model Context Protocol) server integration. This architecture creates a graph-like structure where nodes represent workflow phases, edges represent transitions, and AI agents guide the progression through intelligent decision-making.</p>
+<h2 id="architecture-overview">🏗️ Architecture Overview</h2>
+<h3 id="high-level-graph-structure">High-Level Graph Structure</h3>
+<pre><code>┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                              SPARC GRAPH ARCHITECTURE                                   │
+│                         AI-Assisted Workflow Orchestration                              │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                    USER INTERFACE                                       │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐   │
+│  │   VS Code       │  │   Webview       │  │   Chat          │  │   Issue         │   │
+│  │   Extension     │  │   Interface     │  │   Interface     │  │   Management    │   │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘  └─────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                              ORCHESTRATION LAYER                                        │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐   │
+│  │   Issue         │  │   SPARC         │  │   LangGraph     │  │   AI            │   │
+│  │   Manager       │  │   Workflow      │  │   State         │  │   Orchestrator  │   │
+│  │                 │  │   Engine        │  │   Manager       │  │                 │   │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘  └─────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                              WORKFLOW GRAPH NODES                                       │
+│                                                                                         │
+│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐                    │
+│  │   DESIGN        │───▶│   BUILD         │───▶│   DEBUG         │                    │
+│  │   MODE          │    │   MODE          │    │   MODE          │                    │
+│  │                 │    │                 │    │                 │                    │
+│  │ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────────┐ │                    │
+│  │ │Specification│ │    │ │Implementation│ │    │ │Analysis     │ │                    │
+│  │ │Phase        │ │    │ │Generation   │ │    │ │Engine       │ │                    │
+│  │ └─────────────┘ │    │ └─────────────┘ │    │ └─────────────┘ │                    │
+│  │ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────────┐ │                    │
+│  │ │Pseudocode   │ │    │ │Test         │ │    │ │Issue        │ │                    │
+│  │ │Phase        │ │    │ │Generation   │ │    │ │Detection    │ │                    │
+│  │ └─────────────┘ │    │ └─────────────┘ │    │ └─────────────┘ │                    │
+│  │ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────────┐ │                    │
+│  │ │Architecture │ │    │ │Code         │ │    │ │Fix          │ │                    │
+│  │ │Phase        │ │    │ │Generation   │ │    │ │Generation   │ │                    │
+│  │ └─────────────┘ │    │ └─────────────┘ │    │ └─────────────┘ │                    │
+│  │ ┌─────────────┐ │    │                 │    │                 │                    │
+│  │ │Refinement   │ │    │                 │    │                 │                    │
+│  │ │Phase        │ │    │                 │    │                 │                    │
+│  │ └─────────────┘ │    │                 │    │                 │                    │
+│  │ ┌─────────────┐ │    │                 │    │                 │                    │
+│  │ │Completion   │ │    │                 │    │                 │                    │
+│  │ │Phase        │ │    │                 │    │                 │                    │
+│  │ └─────────────┘ │    │                 │    │                 │                    │
+│  └─────────────────┘    └─────────────────┘    └─────────────────┘                    │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                              AI AGENT LAYER                                             │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐   │
+│  │   Design        │  │   Build         │  │   Debug         │  │   Orchestration │   │
+│  │   Agent         │  │   Agent         │  │   Agent         │  │   Agent         │   │
+│  │                 │  │                 │  │                 │  │                 │   │
+│  │ • Requirements  │  │ • Code          │  │ • Issue         │  │ • Workflow      │   │
+│  │   Analysis      │  │   Generation    │  │   Analysis      │  │   Coordination  │   │
+│  │ • Architecture  │  │ • Test          │  │ • Fix           │  │ • State         │   │
+│  │   Design        │  │   Creation      │  │   Generation    │  │   Management    │   │
+│  │ • Specification │  │ • Documentation │  │ • Optimization  │  │ • Decision      │   │
+│  │   Generation    │  │   Generation    │  │ • Performance   │  │   Making        │   │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘  └─────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                              TOOL INTEGRATION LAYER                                     │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐   │
+│  │   Built-in      │  │   MCP           │  │   External      │  │   Custom        │   │
+│  │   Tools         │  │   Servers       │  │   APIs          │  │   Tools         │   │
+│  │                 │  │                 │  │                 │  │                 │   │
+│  │ • File System   │  │ • GitHub        │  │ • Web Search    │  │ • Project       │   │
+│  │ • Terminal      │  │ • Database      │  │ • Documentation │  │   Specific      │   │
+│  │ • Git           │  │ • Vector Store  │  │ • Code Analysis │  │ • Domain        │   │
+│  │ • Code Analysis │  │ • Embedding     │  │ • Testing       │  │   Specific      │   │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘  └─────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+                                        │
+                                        ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                              PERSISTENCE LAYER                                          │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐   │
+│  │   State         │  │   Artifacts     │  │   Memory        │  │   Vector        │   │
+│  │   Storage       │  │   Storage       │  │   Storage       │  │   Storage       │   │
+│  │                 │  │                 │  │                 │  │                 │   │
+│  │ • Workflow      │  │ • Requirements  │  │ • Chat History  │  │ • Embeddings    │   │
+│  │   State         │  │ • Architecture  │  │ • Context       │  │ • Similarity    │   │
+│  │ • Progress      │  │ • Code          │  │ • Decisions     │  │   Search        │   │
+│  │ • Transitions   │  │ • Tests         │  │ • Iterations    │  │ • Knowledge     │   │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘  └─────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 id="graph-node-structure">🔄 Graph Node Structure</h2>
+<h3 id="node-types">Node Types</h3>
+<h4 id="1-mode-nodes-high-level-workflow-states">1. <strong>Mode Nodes</strong> (High-Level Workflow States)</h4>
+<pre><code class="language-typescript">interface ModeNode {
+  id: string;
+  type: 'design' | 'build' | 'debug';
+  status: 'active' | 'completed' | 'pending' | 'blocked';
+  currentPhase: string;
+  progress: number;
+  artifacts: ArtifactMap;
+  transitions: Transition[];
+}
+</code></pre>
+<h4 id="2-phase-nodes-sparc-workflow-phases">2. <strong>Phase Nodes</strong> (SPARC Workflow Phases)</h4>
+<pre><code class="language-typescript">interface PhaseNode {
+  id: string;
+  mode: 'design' | 'build' | 'debug';
+  phase: 'specification' | 'pseudocode' | 'architecture' | 'refinement' | 'completion';
+  status: 'active' | 'completed' | 'pending' | 'blocked';
+  progress: number;
+  input: string;
+  output: string;
+  artifacts: ArtifactMap;
+  aiAgent: AgentConfig;
+  tools: ToolConfig[];
+}
+</code></pre>
+<h4 id="3-agent-nodes-ai-assistant-instances">3. <strong>Agent Nodes</strong> (AI Assistant Instances)</h4>
+<pre><code class="language-typescript">interface AgentNode {
+  id: string;
+  type: 'design' | 'build' | 'debug' | 'orchestration';
+  role: string;
+  capabilities: string[];
+  tools: string[];
+  context: ContextData;
+  state: AgentState;
+}
+</code></pre>
+<h4 id="4-tool-nodes-available-tools-and-services">4. <strong>Tool Nodes</strong> (Available Tools and Services)</h4>
+<pre><code class="language-typescript">interface ToolNode {
+  id: string;
+  name: string;
+  type: 'built-in' | 'mcp' | 'external' | 'custom';
+  capabilities: string[];
+  parameters: ParameterSchema;
+  status: 'available' | 'busy' | 'error';
+  lastUsed: Date;
+}
+</code></pre>
+<h3 id="edge-types">Edge Types</h3>
+<h4 id="1-transition-edges-workflow-progression">1. <strong>Transition Edges</strong> (Workflow Progression)</h4>
+<pre><code class="language-typescript">interface TransitionEdge {
+  from: string;
+  to: string;
+  condition: TransitionCondition;
+  trigger: 'user_input' | 'ai_decision' | 'completion' | 'error';
+  weight: number;
+  metadata: TransitionMetadata;
+}
+</code></pre>
+<h4 id="2-agent-tool-edges-tool-invocation">2. <strong>Agent-Tool Edges</strong> (Tool Invocation)</h4>
+<pre><code class="language-typescript">interface AgentToolEdge {
+  agentId: string;
+  toolId: string;
+  invocation: ToolInvocation;
+  result: ToolResult;
+  timestamp: Date;
+}
+</code></pre>
+<h4 id="3-context-edges-information-flow">3. <strong>Context Edges</strong> (Information Flow)</h4>
+<pre><code class="language-typescript">interface ContextEdge {
+  from: string;
+  to: string;
+  contextType: 'artifacts' | 'state' | 'memory' | 'decisions';
+  data: ContextData;
+  timestamp: Date;
+}
+</code></pre>
+<h2 id="ai-agent-architecture">🤖 AI Agent Architecture</h2>
+<h3 id="agent-types-and-responsibilities">Agent Types and Responsibilities</h3>
+<h4 id="1-design-agent">1. <strong>Design Agent</strong></h4>
+<pre><code class="language-typescript">class DesignAgent {
+  // Core responsibilities
+  analyzeRequirements(input: string): RequirementsAnalysis;
+  generateSpecifications(context: Context): SpecificationDocument;
+  createPseudocode(requirements: Requirements): PseudocodeDocument;
+  designArchitecture(specs: Specifications): ArchitectureDocument;
+  refineRequirements(feedback: Feedback): RefinedRequirements;
+
+  // AI capabilities
+  private llmClient: LLMClient;
+  private contextManager: ContextManager;
+  private toolRegistry: ToolRegistry;
+
+  // Tool integration
+  availableTools: [
+    'requirements_analyzer',
+    'architecture_designer',
+    'specification_generator',
+    'pseudocode_creator'
+  ];
+}
+</code></pre>
+<h4 id="2-build-agent">2. <strong>Build Agent</strong></h4>
+<pre><code class="language-typescript">class BuildAgent {
+  // Core responsibilities
+  generateImplementation(design: DesignArtifacts): ImplementationCode;
+  createTests(implementation: Code): TestSuite;
+  generateDocumentation(code: Code): Documentation;
+  createConfiguration(requirements: Requirements): ConfigFiles;
+
+  // AI capabilities
+  private codeGenerator: CodeGenerator;
+  private testGenerator: TestGenerator;
+  private docGenerator: DocGenerator;
+
+  // Tool integration
+  availableTools: [
+    'code_generator',
+    'test_creator',
+    'documentation_generator',
+    'config_creator',
+    'file_system',
+    'terminal'
+  ];
+}
+</code></pre>
+<h4 id="3-debug-agent">3. <strong>Debug Agent</strong></h4>
+<pre><code class="language-typescript">class DebugAgent {
+  // Core responsibilities
+  analyzeCode(code: Code): CodeAnalysis;
+  identifyIssues(analysis: CodeAnalysis): IssueList;
+  generateFixes(issues: IssueList): FixProposals;
+  optimizePerformance(code: Code): OptimizationSuggestions;
+
+  // AI capabilities
+  private codeAnalyzer: CodeAnalyzer;
+  private issueDetector: IssueDetector;
+  private fixGenerator: FixGenerator;
+
+  // Tool integration
+  availableTools: [
+    'code_analyzer',
+    'issue_detector',
+    'fix_generator',
+    'performance_profiler',
+    'security_scanner'
+  ];
+}
+</code></pre>
+<h4 id="4-orchestration-agent">4. <strong>Orchestration Agent</strong></h4>
+<pre><code class="language-typescript">class OrchestrationAgent {
+  // Core responsibilities
+  coordinateWorkflow(state: WorkflowState): WorkflowDecision;
+  manageTransitions(current: Node, target: Node): TransitionPlan;
+  resolveConflicts(conflicts: Conflict[]): Resolution;
+  optimizeWorkflow(metrics: WorkflowMetrics): Optimization;
+
+  // AI capabilities
+  private decisionEngine: DecisionEngine;
+  private conflictResolver: ConflictResolver;
+  private optimizer: WorkflowOptimizer;
+
+  // Tool integration
+  availableTools: [
+    'workflow_analyzer',
+    'decision_engine',
+    'conflict_resolver',
+    'performance_monitor'
+  ];
+}
+</code></pre>
+<h2 id="tool-integration-architecture">🔧 Tool Integration Architecture</h2>
+<h3 id="tool-categories">Tool Categories</h3>
+<h4 id="1-built-in-tools">1. <strong>Built-in Tools</strong></h4>
+<pre><code class="language-typescript">interface BuiltInTool {
+  name: string;
+  category: 'filesystem' | 'terminal' | 'git' | 'analysis';
+  implementation: ToolImplementation;
+  parameters: ParameterSchema;
+  capabilities: string[];
+}
+
+// Example built-in tools
+const builtInTools: BuiltInTool[] = [
+  {
+    name: 'file_system',
+    category: 'filesystem',
+    capabilities: ['read', 'write', 'list', 'create', 'delete'],
+    parameters: {
+      operation: { type: 'string', enum: ['read', 'write', 'list', 'create', 'delete'] },
+      path: { type: 'string' },
+      content: { type: 'string', optional: true }
+    }
+  },
+  {
+    name: 'terminal',
+    category: 'terminal',
+    capabilities: ['execute', 'interactive', 'stream'],
+    parameters: {
+      command: { type: 'string' },
+      cwd: { type: 'string', optional: true },
+      interactive: { type: 'boolean', default: false }
+    }
+  }
+];
+</code></pre>
+<h4 id="2-mcp-server-tools">2. <strong>MCP Server Tools</strong></h4>
+<pre><code class="language-typescript">interface MCPServerTool {
+  name: string;
+  serverUrl: string;
+  serverType: 'http' | 'websocket' | 'stdio';
+  capabilities: string[];
+  authentication: AuthConfig;
+  tools: MCPTool[];
+}
+
+// Example MCP server configurations
+const mcpServers: MCPServerTool[] = [
+  {
+    name: 'github-mcp',
+    serverUrl: 'stdio://github-mcp-server',
+    serverType: 'stdio',
+    capabilities: ['repository_management', 'issue_tracking', 'code_analysis'],
+    authentication: {
+      type: 'token',
+      token: 'GITHUB_PERSONAL_ACCESS_TOKEN'
+    },
+    tools: [
+      {
+        name: 'create_issue',
+        description: 'Create a new GitHub issue',
+        parameters: {
+          title: { type: 'string' },
+          body: { type: 'string' },
+          labels: { type: 'array', optional: true }
+        }
+      }
+    ]
+  }
+];
+</code></pre>
+<h4 id="3-external-api-tools">3. <strong>External API Tools</strong></h4>
+<pre><code class="language-typescript">interface ExternalAPITool {
+  name: string;
+  apiUrl: string;
+  authentication: AuthConfig;
+  endpoints: APIEndpoint[];
+  rateLimiting: RateLimitConfig;
+}
+
+// Example external API tools
+const externalAPIs: ExternalAPITool[] = [
+  {
+    name: 'web_search',
+    apiUrl: 'https://api.search.com/v1',
+    authentication: {
+      type: 'api_key',
+      key: 'SEARCH_API_KEY'
+    },
+    endpoints: [
+      {
+        name: 'search',
+        method: 'GET',
+        path: '/search',
+        parameters: {
+          query: { type: 'string' },
+          limit: { type: 'number', default: 10 }
+        }
+      }
+    ]
+  }
+];
+</code></pre>
+<h2 id="langgraph-state-management">📊 LangGraph State Management</h2>
+<h3 id="state-schema">State Schema</h3>
+<pre><code class="language-typescript">interface LangGraphState {
+  // Workflow state
+  currentMode: 'design' | 'build' | 'debug';
+  currentPhase: string;
+  progress: number;
+
+  // Issue context
+  issueId: string;
+  issueTitle: string;
+  issueDescription: string;
+
+  // Artifacts
+  artifacts: {
+    requirements?: string;
+    guidelines?: string;
+    pseudocode?: string;
+    architecture?: string;
+    implementation?: string;
+    tests?: string;
+    notes?: string;
+  };
+
+  // AI context
+  aiContext: {
+    currentAgent: string;
+    agentHistory: AgentAction[];
+    toolCalls: ToolCall[];
+    decisions: Decision[];
+  };
+
+  // Memory and context
+  memory: {
+    chatHistory: ChatMessage[];
+    context: ContextData;
+    retrievedContext: RetrievedContext[];
+  };
+
+  // Workflow metadata
+  metadata: {
+    createdAt: Date;
+    updatedAt: Date;
+    transitions: Transition[];
+    errors: Error[];
+  };
+}
+</code></pre>
+<h3 id="graph-execution-flow">Graph Execution Flow</h3>
+<pre><code class="language-typescript">class LangGraphWorkflow {
+  private state: LangGraphState;
+  private nodes: Map&lt;string, GraphNode&gt;;
+  private edges: Map&lt;string, GraphEdge&gt;;
+
+  async executeWorkflow(input: WorkflowInput): Promise&lt;WorkflowOutput&gt; {
+    // Initialize state
+    this.state = this.initializeState(input);
+
+    // Execute graph traversal
+    while (!this.isComplete()) {
+      const currentNode = this.getCurrentNode();
+      const nextNode = await this.executeNode(currentNode);
+      this.transitionTo(nextNode);
+    }
+
+    return this.generateOutput();
+  }
+
+  private async executeNode(node: GraphNode): Promise&lt;GraphNode&gt; {
+    // Get appropriate agent
+    const agent = this.getAgentForNode(node);
+
+    // Execute agent with tools
+    const result = await agent.execute(node, this.state);
+
+    // Update state
+    this.updateState(result);
+
+    // Determine next node
+    return this.determineNextNode(node, result);
+  }
+}
+</code></pre>
+<h2 id="workflow-execution-flow">🔄 Workflow Execution Flow</h2>
+<h3 id="1-user-input-processing">1. <strong>User Input Processing</strong></h3>
+<pre><code class="language-typescript">async function processUserInput(input: UserInput): Promise&lt;WorkflowResult&gt; {
+  // 1. Parse and validate input
+  const parsedInput = await parseUserInput(input);
+
+  // 2. Determine workflow mode
+  const mode = determineWorkflowMode(parsedInput);
+
+  // 3. Initialize or load workflow state
+  const state = await initializeWorkflowState(parsedInput.issueId, mode);
+
+  // 4. Execute LangGraph workflow
+  const result = await langGraphWorkflow.execute(state, parsedInput);
+
+  // 5. Update persistence layer
+  await updatePersistence(result);
+
+  // 6. Return result to UI
+  return result;
+}
+</code></pre>
+<h3 id="2-ai-agent-coordination">2. <strong>AI Agent Coordination</strong></h3>
+<pre><code class="language-typescript">class AgentCoordinator {
+  private agents: Map&lt;string, AIAgent&gt;;
+  private toolRegistry: ToolRegistry;
+  private contextManager: ContextManager;
+
+  async coordinateWorkflow(
+    mode: WorkflowMode,
+    phase: WorkflowPhase,
+    input: string,
+    context: WorkflowContext
+  ): Promise&lt;AgentResult&gt; {
+    // 1. Select appropriate agent
+    const agent = this.selectAgent(mode, phase);
+
+    // 2. Prepare context
+    const enrichedContext = await this.contextManager.enrichContext(context);
+
+    // 3. Execute agent with tools
+    const result = await agent.execute(input, enrichedContext, this.toolRegistry);
+
+    // 4. Update workflow state
+    await this.updateWorkflowState(result);
+
+    // 5. Determine next steps
+    const nextSteps = await this.determineNextSteps(result);
+
+    return {
+      result,
+      nextSteps,
+      updatedState: this.getCurrentState()
+    };
+  }
+}
+</code></pre>
+<h3 id="3-tool-invocation-flow">3. <strong>Tool Invocation Flow</strong></h3>
+<pre><code class="language-typescript">class ToolInvocationFlow {
+  async invokeTool(
+    agentId: string,
+    toolName: string,
+    parameters: ToolParameters
+  ): Promise&lt;ToolResult&gt; {
+    // 1. Validate tool availability
+    const tool = await this.toolRegistry.getTool(toolName);
+    if (!tool) {
+      throw new Error(`Tool ${toolName} not found`);
+    }
+
+    // 2. Check agent permissions
+    const agent = this.agentRegistry.getAgent(agentId);
+    if (!agent.hasPermission(toolName)) {
+      throw new Error(`Agent ${agentId} not authorized for tool ${toolName}`);
+    }
+
+    // 3. Execute tool
+    const result = await tool.execute(parameters);
+
+    // 4. Log tool usage
+    await this.logToolUsage(agentId, toolName, parameters, result);
+
+    // 5. Update context
+    await this.contextManager.updateContext(result);
+
+    return result;
+  }
+}
+</code></pre>
+<h2 id="performance-and-optimization">📈 Performance and Optimization</h2>
+<h3 id="graph-optimization-strategies">Graph Optimization Strategies</h3>
+<h4 id="1-node-caching">1. <strong>Node Caching</strong></h4>
+<pre><code class="language-typescript">class NodeCache {
+  private cache: Map&lt;string, CachedNode&gt;;
+  private ttl: number;
+
+  async getNode(nodeId: string): Promise&lt;GraphNode | null&gt; {
+    const cached = this.cache.get(nodeId);
+    if (cached &amp;&amp; !this.isExpired(cached)) {
+      return cached.node;
+    }
+    return null;
+  }
+
+  async setNode(nodeId: string, node: GraphNode): Promise&lt;void&gt; {
+    this.cache.set(nodeId, {
+      node,
+      timestamp: Date.now(),
+      ttl: this.ttl
+    });
+  }
+}
+</code></pre>
+<h4 id="2-parallel-execution">2. <strong>Parallel Execution</strong></h4>
+<pre><code class="language-typescript">class ParallelExecutor {
+  async executeParallelNodes(nodes: GraphNode[]): Promise&lt;GraphNode[]&gt; {
+    const promises = nodes.map(node =&gt; this.executeNode(node));
+    const results = await Promise.allSettled(promises);
+
+    return results
+      .filter(result =&gt; result.status === 'fulfilled')
+      .map(result =&gt; (result as PromiseFulfilledResult&lt;GraphNode&gt;).value);
+  }
+}
+</code></pre>
+<h4 id="3-state-compression">3. <strong>State Compression</strong></h4>
+<pre><code class="language-typescript">class StateCompressor {
+  compressState(state: LangGraphState): CompressedState {
+    return {
+      // Keep only essential state
+      currentMode: state.currentMode,
+      currentPhase: state.currentPhase,
+      progress: state.progress,
+      issueId: state.issueId,
+
+      // Compress artifacts
+      artifacts: this.compressArtifacts(state.artifacts),
+
+      // Compress memory
+      memory: this.compressMemory(state.memory),
+
+      // Keep metadata
+      metadata: state.metadata
+    };
+  }
+}
+</code></pre>
+<h2 id="security-and-privacy">🔒 Security and Privacy</h2>
+<h3 id="security-considerations">Security Considerations</h3>
+<h4 id="1-agent-isolation">1. <strong>Agent Isolation</strong></h4>
+<pre><code class="language-typescript">class AgentIsolation {
+  private sandbox: AgentSandbox;
+
+  async executeAgentInSandbox(
+    agent: AIAgent,
+    input: string,
+    tools: ToolRegistry
+  ): Promise&lt;AgentResult&gt; {
+    // Create isolated environment
+    const sandbox = await this.sandbox.create();
+
+    try {
+      // Execute agent in sandbox
+      const result = await sandbox.execute(agent, input, tools);
+      return result;
+    } finally {
+      // Clean up sandbox
+      await sandbox.destroy();
+    }
+  }
+}
+</code></pre>
+<h4 id="2-tool-permission-management">2. <strong>Tool Permission Management</strong></h4>
+<pre><code class="language-typescript">class ToolPermissionManager {
+  private permissions: Map&lt;string, Set&lt;string&gt;&gt;;
+
+  hasPermission(agentId: string, toolName: string): boolean {
+    const agentPermissions = this.permissions.get(agentId);
+    return agentPermissions?.has(toolName) ?? false;
+  }
+
+  grantPermission(agentId: string, toolName: string): void {
+    if (!this.permissions.has(agentId)) {
+      this.permissions.set(agentId, new Set());
+    }
+    this.permissions.get(agentId)!.add(toolName);
+  }
+}
+</code></pre>
+<h2 id="testing-and-validation">🧪 Testing and Validation</h2>
+<h3 id="graph-testing-framework">Graph Testing Framework</h3>
+<pre><code class="language-typescript">class GraphTestFramework {
+  async testWorkflowExecution(
+    workflow: LangGraphWorkflow,
+    testCases: TestCase[]
+  ): Promise&lt;TestResults&gt; {
+    const results: TestResult[] = [];
+
+    for (const testCase of testCases) {
+      try {
+        const result = await workflow.execute(testCase.input);
+        results.push({
+          testCase: testCase.id,
+          status: 'passed',
+          result,
+          duration: result.duration
+        });
+      } catch (error) {
+        results.push({
+          testCase: testCase.id,
+          status: 'failed',
+          error: error.message,
+          duration: 0
+        });
+      }
+    }
+
+    return {
+      total: testCases.length,
+      passed: results.filter(r =&gt; r.status === 'passed').length,
+      failed: results.filter(r =&gt; r.status === 'failed').length,
+      results
+    };
+  }
+}
+</code></pre>
+<h2 id="future-enhancements">🚀 Future Enhancements</h2>
+<h3 id="planned-features">Planned Features</h3>
+<ol>
+<li><strong>Dynamic Graph Construction</strong>: Build workflow graphs dynamically based on project requirements</li>
+<li><strong>Multi-Agent Collaboration</strong>: Enable multiple agents to work together on complex tasks</li>
+<li><strong>Real-time Optimization</strong>: Continuously optimize workflow execution based on performance metrics</li>
+<li><strong>Federated Learning</strong>: Learn from multiple projects to improve agent capabilities</li>
+<li><strong>Visual Graph Editor</strong>: Provide a visual interface for designing custom workflows</li>
+</ol>
+<h3 id="extension-points">Extension Points</h3>
+<pre><code class="language-typescript">interface GraphExtension {
+  name: string;
+  version: string;
+
+  // Custom nodes
+  customNodes?: CustomNode[];
+
+  // Custom edges
+  customEdges?: CustomEdge[];
+
+  // Custom agents
+  customAgents?: CustomAgent[];
+
+  // Custom tools
+  customTools?: CustomTool[];
+
+  // Hooks
+  hooks?: {
+    beforeNodeExecution?: (node: GraphNode) =&gt; Promise&lt;void&gt;;
+    afterNodeExecution?: (node: GraphNode, result: any) =&gt; Promise&lt;void&gt;;
+    beforeTransition?: (from: GraphNode, to: GraphNode) =&gt; Promise&lt;boolean&gt;;
+  };
+}
+</code></pre>
+<h2 id="monitoring-and-analytics">📊 Monitoring and Analytics</h2>
+<h3 id="workflow-metrics">Workflow Metrics</h3>
+<pre><code class="language-typescript">interface WorkflowMetrics {
+  executionTime: number;
+  nodeExecutionTimes: Map&lt;string, number&gt;;
+  toolUsageCounts: Map&lt;string, number&gt;;
+  errorRates: Map&lt;string, number&gt;;
+  successRate: number;
+  resourceUsage: ResourceUsage;
+  userSatisfaction: number;
+}
+
+class WorkflowMonitor {
+  async collectMetrics(workflowId: string): Promise&lt;WorkflowMetrics&gt; {
+    // Collect execution metrics
+    const executionMetrics = await this.collectExecutionMetrics(workflowId);
+
+    // Collect performance metrics
+    const performanceMetrics = await this.collectPerformanceMetrics(workflowId);
+
+    // Collect user feedback
+    const userFeedback = await this.collectUserFeedback(workflowId);
+
+    return {
+      ...executionMetrics,
+      ...performanceMetrics,
+      userSatisfaction: userFeedback.satisfaction
+    };
+  }
+}
+</code></pre>
+<hr />
+<p>This comprehensive graph architecture provides a robust foundation for AI-assisted SPARC workflow orchestration, enabling intelligent decision-making, tool integration, and seamless user experience while maintaining security, performance, and extensibility.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.top", "navigation.sections", "navigation.expand", "toc.integrate", "content.code.copy", "content.action.edit", "content.tabs.link", "navigation.instant", "navigation.tracking", "navigation.indexes", "navigation.footer", "navigation.path", "navigation.prune", "navigation.top", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "navigation.indexes.sticky", "navigation.footer.sticky", "navigation.path.sticky", "navigation.prune.sticky", "navigation.top.sticky", "navigation.tabs.sticky", "navigation.sections.sticky", "navigation.expand.sticky", "toc.integrate.sticky", "content.code.copy.sticky", "content.action.edit.sticky", "content.tabs.link.sticky", "navigation.instant.sticky", "navigation.tracking.sticky", "n"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.f55a23d4.min.js"></script>
+      
+    
+  </body>
+</html>
