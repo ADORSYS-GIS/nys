@@ -245,48 +245,16 @@ export class SpecificationNode extends BaseGraphNode {
       throw error;
     }
   }
-  
-  private async generateRequirements(description: string): Promise<string> {
-    // Simulate AI-generated requirements
-    return `# Requirements Specification
-
-## Overview
-${description}
-
-## Functional Requirements
-- [ ] Core functionality implementation
-- [ ] User interface components
-- [ ] Data processing capabilities
-- [ ] Integration requirements
-
-## Non-Functional Requirements
-- [ ] Performance requirements
-- [ ] Security requirements
-- [ ] Scalability requirements
-- [ ] Maintainability requirements
-
-## Constraints
-- [ ] Technical constraints
-- [ ] Resource constraints
-- [ ] Time constraints
-- [ ] Compliance requirements
-
-## Acceptance Criteria
-- [ ] Feature completeness
-- [ ] Performance benchmarks
-- [ ] Quality standards
-- [ ] User experience goals`;
-  }
 }
 
 export class PseudocodeNode extends BaseGraphNode {
   constructor(workspaceRoot: vscode.Uri) {
     super('pseudocode', 'Pseudocode Phase', 'design', workspaceRoot);
   }
-  
+
   async execute(state: GraphNodeState): Promise<GraphNodeState> {
     this.logExecution(this.id, 'Starting pseudocode phase', state.artifacts.requirements);
-    
+
     try {
       // Use AI service to generate pseudocode based on user input
       const aiRequest: AIRequest = {
@@ -299,32 +267,32 @@ export class PseudocodeNode extends BaseGraphNode {
           existingArtifacts: state.artifacts
         }
       };
-      
+
       const aiResponse = await this.aiService.processRequest(aiRequest);
       const pseudocode = aiResponse.content;
-      
+
       // Update state with AI-generated pseudocode
       state = this.addArtifact(state, 'pseudocode', pseudocode);
       state = this.updateProgress(state, 40);
       state = this.addAgentAction(
-        state,
-        'design-agent',
-        'generate_pseudocode',
-        state.artifacts.requirements || '',
-        pseudocode
+          state,
+          'design-agent',
+          'generate_pseudocode',
+          state.artifacts.requirements || '',
+          pseudocode
       );
-      
+
       // Add AI context to state
       state.aiContext = {
         ...state.aiContext,
         lastAIResponse: aiResponse,
         confidence: aiResponse.confidence
       };
-      
+
       // Move to next phase
       state.currentPhase = 'architecture';
       this.status = 'completed';
-      
+
       this.logExecution(this.id, 'Pseudocode phase completed', pseudocode);
       return state;
     } catch (error) {
@@ -333,65 +301,7 @@ export class PseudocodeNode extends BaseGraphNode {
       throw error;
     }
   }
-  
-  private async generatePseudocode(_requirements: string): Promise<string> {
-    // Simulate AI-generated pseudocode
-    return `# Pseudocode Implementation
-
-## Main Algorithm
-\`\`\`
-BEGIN
-  INITIALIZE system
-  LOAD requirements
-  VALIDATE inputs
-  
-  FOR each requirement DO
-    ANALYZE requirement
-    DESIGN solution
-    IMPLEMENT logic
-    TEST functionality
-  END FOR
-  
-  INTEGRATE components
-  VALIDATE system
-  DEPLOY solution
-END
-\`\`\`
-
-## Data Structures
-\`\`\`
-STRUCTURE UserData {
-  id: STRING
-  name: STRING
-  email: STRING
-  preferences: OBJECT
 }
-
-STRUCTURE SystemState {
-  currentUser: UserData
-  session: STRING
-  permissions: ARRAY
-}
-\`\`\`
-
-## Key Functions
-\`\`\`
-FUNCTION processUserInput(input: STRING) -> RESULT
-  VALIDATE input
-  PARSE input
-  EXECUTE command
-  RETURN result
-END FUNCTION
-
-FUNCTION validateData(data: OBJECT) -> BOOLEAN
-  CHECK data integrity
-  VERIFY permissions
-  RETURN validation result
-END FUNCTION
-\`\`\``;
-  }
-}
-
 export class ArchitectureNode extends BaseGraphNode {
   constructor(workspaceRoot: vscode.Uri) {
     super('architecture', 'Architecture Phase', 'design', workspaceRoot);
@@ -446,80 +356,7 @@ export class ArchitectureNode extends BaseGraphNode {
       throw error;
     }
   }
-  
-  private async generateArchitecture(_pseudocode: string): Promise<string> {
-    // Simulate AI-generated architecture
-    return `# System Architecture
 
-## Architecture Overview
-\`\`\`
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Presentation  │    │   Business      │    │   Data          │
-│   Layer         │    │   Logic Layer   │    │   Layer         │
-│                 │    │                 │    │                 │
-│ • UI Components │    │ • Core Services │    │ • Database      │
-│ • Controllers   │    │ • Business      │    │ • File System   │
-│ • Views         │    │   Rules         │    │ • External APIs │
-│ • Templates     │    │ • Validation    │    │ • Cache         │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-\`\`\`
-
-## Component Design
-- **Frontend**: React/Vue.js components with TypeScript
-- **Backend**: Node.js/Express with RESTful APIs
-- **Database**: PostgreSQL with Redis caching
-- **Authentication**: JWT-based with OAuth2 support
-- **File Storage**: AWS S3 or local file system
-
-## API Design
-\`\`\`
-GET    /api/users           - List users
-POST   /api/users           - Create user
-GET    /api/users/:id       - Get user by ID
-PUT    /api/users/:id       - Update user
-DELETE /api/users/:id       - Delete user
-\`\`\`
-
-## Security Considerations
-- Input validation and sanitization
-- Authentication and authorization
-- Rate limiting and DDoS protection
-- Data encryption in transit and at rest
-- Audit logging and monitoring`;
-  }
-  
-  private async generateGuidelines(_requirements: string): Promise<string> {
-    // Simulate AI-generated guidelines
-    return `# Development Guidelines
-
-## Code Standards
-- Use TypeScript for type safety
-- Follow ESLint and Prettier configurations
-- Implement comprehensive error handling
-- Write unit tests for all functions
-- Use meaningful variable and function names
-
-## Architecture Principles
-- Follow SOLID principles
-- Implement dependency injection
-- Use design patterns appropriately
-- Maintain separation of concerns
-- Ensure scalability and maintainability
-
-## Testing Strategy
-- Unit tests for individual components
-- Integration tests for API endpoints
-- End-to-end tests for user workflows
-- Performance tests for critical paths
-- Security tests for vulnerabilities
-
-## Deployment Guidelines
-- Use containerization (Docker)
-- Implement CI/CD pipelines
-- Use environment-specific configurations
-- Monitor application performance
-- Implement rollback strategies`;
-  }
 }
 
 export class RefinementNode extends BaseGraphNode {
@@ -792,103 +629,7 @@ export class ImplementationNode extends BaseGraphNode {
     
     return report;
   }
-  
-  private async generateImplementation(_architecture: string): Promise<string> {
-    // Simulate AI-generated implementation
-    return `# Implementation Code
 
-## Main Application File
-\`\`\`typescript
-// src/app.ts
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import { userRoutes } from './routes/users';
-import { authRoutes } from './routes/auth';
-import { errorHandler } from './middleware/errorHandler';
-
-const app = express();
-
-// Middleware
-app.use(helmet());
-app.use(cors());
-app.use(express.json());
-
-// Routes
-app.use('/api/users', userRoutes);
-app.use('/api/auth', authRoutes);
-
-// Error handling
-app.use(errorHandler);
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(\`Server running on port \${PORT}\`);
-});
-
-export default app;
-\`\`\`
-
-## User Service
-\`\`\`typescript
-// src/services/userService.ts
-import { User } from '../models/User';
-import { Database } from '../database/Database';
-
-export class UserService {
-  constructor(private db: Database) {}
-  
-  async createUser(userData: Partial<User>): Promise<User> {
-    // Validate input
-    if (!userData.email || !userData.name) {
-      throw new Error('Email and name are required');
-    }
-    
-    // Create user
-    const user = await this.db.users.create(userData);
-    return user;
-  }
-  
-  async getUserById(id: string): Promise<User | null> {
-    return await this.db.users.findById(id);
-  }
-  
-  async updateUser(id: string, updates: Partial<User>): Promise<User> {
-    const user = await this.db.users.update(id, updates);
-    if (!user) {
-      throw new Error('User not found');
-    }
-    return user;
-  }
-  
-  async deleteUser(id: string): Promise<boolean> {
-    return await this.db.users.delete(id);
-  }
-}
-\`\`\`
-
-## Database Models
-\`\`\`typescript
-// src/models/User.ts
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export class UserModel {
-  constructor(
-    public id: string,
-    public name: string,
-    public email: string,
-    public createdAt: Date = new Date(),
-    public updatedAt: Date = new Date()
-  ) {}
-}
-\`\`\``;
-  }
 }
 
 export class TestingNode extends BaseGraphNode {

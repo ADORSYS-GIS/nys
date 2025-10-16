@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mira Workflow Progress</title>
+    <style>
+        body {
+            font-family: var(--vscode-font-family);
+            font-size: var(--vscode-font-size);
+            color: var(--vscode-foreground);
+            background-color: var(--vscode-editor-background);
+            margin: 0;
+            padding: 16px;
+            line-height: 1.4;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--vscode-textLink-foreground);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--vscode-badge-background);
+        }
+
+        .status-indicator.active {
+            background-color: #007acc;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.completed {
+            background-color: #28a745;
+        }
+
+        .status-indicator.failed {
+            background-color: #dc3545;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .confidence-feedback {
+            background-color: var(--vscode-inputValidation-warningBackground);
+            border: 1px solid var(--vscode-inputValidation-warningBorder);
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .confidence-feedback.show {
+            display: block;
+        }
+
+        .feedback-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-weight: bold;
+            color: var(--vscode-inputValidation-warningForeground);
+        }
+
+        .feedback-content {
+            color: var(--vscode-foreground);
+        }
+
+        .feedback-content h3 {
+            margin-top: 0;
+            color: var(--vscode-textLink-foreground);
+        }
+
+        .feedback-content ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .feedback-content li {
+            margin-bottom: 4px;
+        }
+
+        .workflow-progress {
+            margin-bottom: 20px;
+        }
+
+        .phase-section {
+            margin-bottom: 24px;
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .phase-header {
+            background-color: var(--vscode-panel-background);
+            padding: 12px 16px;
+            font-weight: bold;
+            color: var(--vscode-textLink-foreground);
+            border-bottom: 1px solid var(--vscode-panel-border);
+        }
+
+        .step-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .step-item:last-child {
+            border-bottom: none;
+        }
+
+        .step-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .step-icon.pending {
+            background-color: var(--vscode-badge-background);
+            color: var(--vscode-badge-foreground);
+        }
+
+        .step-icon.running {
+            background-color: #007acc;
+            animation: pulse 2s infinite;
+        }
+
+        .step-icon.completed {
+            background-color: #28a745;
+        }
+
+        .step-icon.failed {
+            background-color: #dc3545;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-name {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .step-message {
+            font-size: 12px;
+            color: var(--vscode-descriptionForeground);
+            margin-bottom: 4px;
+        }
+
+        .step-progress {
+            width: 100%;
+            height: 4px;
+            background-color: var(--vscode-progressBar-background);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .step-progress-bar {
+            height: 100%;
+            background-color: var(--vscode-progressBar-background);
+            transition: width 0.3s ease;
+        }
+
+        .step-progress-bar.running {
+            background-color: #007acc;
+        }
+
+        .step-progress-bar.completed {
+            background-color: #28a745;
+        }
+
+        .step-progress-bar.failed {
+            background-color: #dc3545;
+        }
+
+        .step-duration {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            margin-left: 8px;
+        }
+
+        .workflow-summary {
+            background-color: var(--vscode-input-background);
+            border-radius: 6px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+
+        .summary-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--vscode-textLink-foreground);
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--vscode-textLink-foreground);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .error-message {
+            background-color: var(--vscode-inputValidation-errorBackground);
+            border: 1px solid var(--vscode-inputValidation-errorBorder);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 16px;
+            color: var(--vscode-inputValidation-errorForeground);
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--vscode-descriptionForeground);
+            padding: 40px;
+        }
+
+        .refresh-button {
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .refresh-button:hover {
+            background-color: var(--vscode-button-hoverBackground);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">
+            <span class="status-indicator" id="statusIndicator"></span>
+            🔄 Mira Workflow Progress
+        </div>
+        <button class="refresh-button" onclick="refreshProgress()">Refresh</button>
+    </div>
+
+    <div class="confidence-feedback" id="confidenceFeedback">
+        <div class="feedback-header">
+            🤔 Request Needs More Details
+        </div>
+        <div class="feedback-content" id="feedbackContent">
+            <!-- Confidence feedback content will be inserted here -->
+        </div>
+    </div>
+
+    <div class="error-message" id="errorMessage">
+        <strong>❌ Workflow Error:</strong>
+        <div id="errorContent"></div>
+    </div>
+
+    <div class="workflow-progress" id="workflowProgress">
+        <div class="empty-state">
+            No workflow in progress. Start a workflow to see real-time progress.
+        </div>
+    </div>
+
+    <div class="workflow-summary" id="workflowSummary" style="display: none;">
+        <div class="summary-title">📊 Workflow Summary</div>
+        <div class="summary-stats">
+            <div class="stat-item">
+                <div class="stat-value" id="totalSteps">0</div>
+                <div class="stat-label">Total Steps</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="completedSteps">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="runningSteps">0</div>
+                <div class="stat-label">Running</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalDuration">0s</div>
+                <div class="stat-label">Duration</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const vscode = acquireVsCodeApi();
+        let currentProgress = [];
+        let startTime = null;
+
+        // Listen for messages from the extension
+        window.addEventListener('message', event => {
+            const message = event.data;
+            switch (message.type) {
+                case 'confidence_feedback':
+                    showConfidenceFeedback(message.data);
+                    break;
+                case 'workflow_progress':
+                    updateWorkflowProgress(message.data);
+                    break;
+                case 'step_completion':
+                    handleStepCompletion(message.data);
+                    break;
+                case 'workflow_error':
+                    showWorkflowError(message.data);
+                    break;
+            }
+        });
+
+        function showConfidenceFeedback(data) {
+            const feedbackDiv = document.getElementById('confidenceFeedback');
+            const contentDiv = document.getElementById('feedbackContent');
+            
+            contentDiv.innerHTML = data.analysis.userGuidance;
+            feedbackDiv.classList.add('show');
+            
+            // Auto-hide after 30 seconds
+            setTimeout(() => {
+                feedbackDiv.classList.remove('show');
+            }, 30000);
+        }
+
+        function updateWorkflowProgress(data) {
+            const progress = data.progress;
+            const progressContainer = document.getElementById('workflowProgress');
+            
+            // Update status indicator
+            const statusIndicator = document.getElementById('statusIndicator');
+            statusIndicator.className = `status-indicator ${progress.status}`;
+            
+            // Update or create progress display
+            updateProgressDisplay(progress);
+            
+            // Show summary
+            document.getElementById('workflowSummary').style.display = 'block';
+            updateSummary();
+        }
+
+        function updateProgressDisplay(progress) {
+            const progressContainer = document.getElementById('workflowProgress');
+            
+            // Find existing phase or create new one
+            let phaseDiv = document.querySelector(`[data-phase="${progress.phase}"]`);
+            if (!phaseDiv) {
+                phaseDiv = createPhaseSection(progress.phase);
+                progressContainer.appendChild(phaseDiv);
+            }
+            
+            // Find existing step or create new one
+            let stepDiv = phaseDiv.querySelector(`[data-step="${progress.step}"]`);
+            if (!stepDiv) {
+                stepDiv = createStepItem(progress);
+                phaseDiv.appendChild(stepDiv);
+            }
+            
+            // Update step
+            updateStepItem(stepDiv, progress);
+        }
+
+        function createPhaseSection(phase) {
+            const phaseDiv = document.createElement('div');
+            phaseDiv.className = 'phase-section';
+            phaseDiv.setAttribute('data-phase', phase);
+            
+            const header = document.createElement('div');
+            header.className = 'phase-header';
+            header.textContent = phase;
+            
+            phaseDiv.appendChild(header);
+            return phaseDiv;
+        }
+
+        function createStepItem(progress) {
+            const stepDiv = document.createElement('div');
+            stepDiv.className = 'step-item';
+            stepDiv.setAttribute('data-step', progress.step);
+            
+            const icon = document.createElement('div');
+            icon.className = `step-icon ${progress.status}`;
+            icon.textContent = getStepIcon(progress.status);
+            
+            const content = document.createElement('div');
+            content.className = 'step-content';
+            
+            const name = document.createElement('div');
+            name.className = 'step-name';
+            name.textContent = progress.step;
+            
+            const message = document.createElement('div');
+            message.className = 'step-message';
+            message.textContent = progress.message;
+            
+            const progressBar = document.createElement('div');
+            progressBar.className = 'step-progress';
+            
+            const progressBarFill = document.createElement('div');
+            progressBarFill.className = `step-progress-bar ${progress.status}`;
+            progressBarFill.style.width = `${progress.progress}%`;
+            
+            progressBar.appendChild(progressBarFill);
+            content.appendChild(name);
+            content.appendChild(message);
+            content.appendChild(progressBar);
+            
+            stepDiv.appendChild(icon);
+            stepDiv.appendChild(content);
+            
+            return stepDiv;
+        }
+
+        function updateStepItem(stepDiv, progress) {
+            const icon = stepDiv.querySelector('.step-icon');
+            const message = stepDiv.querySelector('.step-message');
+            const progressBar = stepDiv.querySelector('.step-progress-bar');
+            
+            icon.className = `step-icon ${progress.status}`;
+            icon.textContent = getStepIcon(progress.status);
+            message.textContent = progress.message;
+            progressBar.className = `step-progress-bar ${progress.status}`;
+            progressBar.style.width = `${progress.progress}%`;
+        }
+
+        function getStepIcon(status) {
+            switch (status) {
+                case 'pending': return '⏳';
+                case 'running': return '🔄';
+                case 'completed': return '✅';
+                case 'failed': return '❌';
+                default: return '⏳';
+            }
+        }
+
+        function handleStepCompletion(data) {
+            // Update the completed step
+            const stepDiv = document.querySelector(`[data-step="${data.step}"]`);
+            if (stepDiv) {
+                const icon = stepDiv.querySelector('.step-icon');
+                const message = stepDiv.querySelector('.step-message');
+                
+                icon.className = 'step-icon completed';
+                icon.textContent = '✅';
+                message.textContent = `${data.step} completed in ${data.duration}ms`;
+            }
+            
+            updateSummary();
+        }
+
+        function showWorkflowError(data) {
+            const errorDiv = document.getElementById('errorMessage');
+            const errorContent = document.getElementById('errorContent');
+            
+            errorContent.textContent = data.error;
+            errorDiv.classList.add('show');
+            
+            // Update status indicator
+            const statusIndicator = document.getElementById('statusIndicator');
+            statusIndicator.className = 'status-indicator failed';
+        }
+
+        function updateSummary() {
+            const steps = document.querySelectorAll('.step-item');
+            const completed = document.querySelectorAll('.step-icon.completed').length;
+            const running = document.querySelectorAll('.step-icon.running').length;
+            
+            document.getElementById('totalSteps').textContent = steps.length;
+            document.getElementById('completedSteps').textContent = completed;
+            document.getElementById('runningSteps').textContent = running;
+            
+            if (startTime) {
+                const duration = Math.round((Date.now() - startTime) / 1000);
+                document.getElementById('totalDuration').textContent = `${duration}s`;
+            }
+        }
+
+        function refreshProgress() {
+            // Request fresh progress data
+            vscode.postMessage({
+                command: 'refreshProgress'
+            });
+        }
+
+        // Initialize
+        startTime = Date.now();
+    </script>
+</body>
+</html>

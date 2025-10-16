@@ -1,4 +1,4 @@
-# Mira - SPARC Workflow-Driven Development Assistant
+# Nys - SPARC Workflow-Driven Development Assistant
 
 A Visual Studio Code extension that implements a **workflow-driven assistant** based on the **SPARC framework** (Specification → Pseudocode → Architecture → Refinement → Completion). The assistant is **issue-driven**: every new task is stored as an *issue folder*, and each issue goes through **Design → Build → Debug** modes for systematic development.
 
@@ -87,8 +87,35 @@ Mira is architected for modular, persistent, and orchestrated AI workflows:
 - **Issue Management System**: Persistent issue folders with structured metadata and state tracking
 - **Tool Integration Layer**: Built-in tools + MCP server support for external capabilities
 - **File System Integration**: Direct project manipulation with version control awareness
-- **State Persistence**: All workflow state stored in `.nys/` directory for session continuity
+- **State Persistence**: All workflow state stored in `.nys/` directory for session continuity.<br>
+![arc.png](./images/architecture.png)
 
+## Orchestrator and GraphNodes
+Each step in the SPARC workflow occurs in nodes and these nodes chained to each other, either by a sequential, parallel or
+conditional edge. building GraphNodes and we have agents in each of these nodes orchestrating flow from one Node to another
+![Orchestrator](./images/orchestration.png)
+
+### GraphNodeState
+Nodes refers to each step in th SPARC workflow and are grouped into 3 categories
+- Design Nodes
+- Build Nodes
+- Debug Nodes
+The GraphNodeState shows in initial state of the graph (similar to Langgraph's).<br>
+![graphnodestate.png](./images/NodeState.png)
+
+### Decision Workflow
+![decisionworkflow.png](./images/decisionworkflow.png)
+![decidenextnode](./images/decidenextnode.png)
+
+## Building GraphNodes Chains
+Building GraphNodes is as simple as just chaining them together in an analogous fashion to Langgraph's way
+![chain.png](./images/chains.png)
+
+## Agents
+Agents are the intelligent brains in the nodes execution they do this by their base systemprompts
+which triggers the way the llm provide responses from their inputs
+Each step in the SPARC workflow falls in a particular agent group.<br>
+![agents.png](./images/agents.png)
 ## Requirements
 
 - Visual Studio Code 1.60.0 or newer
@@ -166,24 +193,6 @@ npx vsce package
 - `MCP: List Available Tools` - Show available MCP tools
 - `MCP: Open Chat View` - Open dedicated MCP chat interface
 
-## Configuration (summary)
-
-
-## Security & Privacy
-- No telemetry is collected by this extension.
-- Network access is limited to the endpoints you configure (MCP server, optional Embedding MCP, Vector MCP, or Milvus).
-- Credentials:
-  - Standard HTTP/HTTPS: If provided, an Authorization: Bearer <token> header is used for MCP requests.
-  - Stdio mode: Tokens are forwarded to the MCP binary via environment variables (GITHUB_PERSONAL_ACCESS_TOKEN, GITHUB_TOKEN, API_KEY) for compatibility.
-  - Tokens are only persisted if you explicitly save them in VS Code settings.
-- Tool discovery is cached in memory for the session after connecting; there is no periodic background refresh.
-- Logs may include masked identifiers for debugging; avoid sharing logs that could contain sensitive project details.
-
-## Troubleshooting
-- Not connected? Ensure serverUrl is correct. For stdio, verify the binary path and that your token is valid.
-- GitHub MCP stdio: In stdio mode the extension forwards the token via GITHUB_PERSONAL_ACCESS_TOKEN/GITHUB_TOKEN and API_KEY env vars.
-- Tool list empty? Connect first; tools are fetched on connect and cached for the session.
-- Semantic selection requires embedding/vector config (Vector MCP) or Milvus connectivity.
 
 ## 📚 Documentation
 
