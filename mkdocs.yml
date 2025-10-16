@@ -1,12 +1,14 @@
 
 site_name: Nys - SPARC Workflow-Driven Assistant Docs
-site_url: https://Christiantyemele.github.io/mimie/
+site_url: https://ADORSYS-GIS.github.io/nys/
 nav:
-  - Home: index.md
+  - Home: README.md
   - README Split:
-{% for i in range(1, 17) %}
-    - Page {{ i }}: docs/readme-pages/page-{{ i }}.md
-{% endfor %}
+    - Page 1: readme-pages/Overview.md
+    - Page 2: readme-pages/page-2.md
+    - Page 3: readme-pages/page-3.md
+    - Page 4: readme-pages/page-4.md
+    - Page 5: readme-pages/page-5.md
 theme:
   name: material
   features:

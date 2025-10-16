@@ -1,9 +1,10 @@
-## 🎯 **Core Philosophy**
+## 🏗️ **Architecture Overview**
 
-Mira transforms development from ad-hoc coding to structured, traceable workflows. Every development task becomes an issue that progresses through three distinct phases:
+Mira is architected for modular, persistent, and orchestrated AI workflows:
 
-- **🎨 Design Mode**: Analyze requirements, generate specifications, and create technical guidelines
-- **🔨 Build Mode**: Generate code, create project structure, and implement features  
-- **🐛 Debug Mode**: Identify issues, apply fixes, and optimize performance
-
-This ensures every piece of code has clear requirements, documented decisions, and traceable evolution.
+- **SPARC Workflow Engine**: Core orchestration system managing Design → Build → Debug transitions
+- **Issue Management System**: Persistent issue folders with structured metadata and state tracking
+- **Tool Integration Layer**: Built-in tools + MCP server support for external capabilities
+- **File System Integration**: Direct project manipulation with version control awareness
+- **State Persistence**: All workflow state stored in `.nys/` directory for session continuity.<br>
+  ![arc.png](../../images/architecture.png)
